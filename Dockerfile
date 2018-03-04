@@ -1,26 +1,17 @@
-FROM cloudycube/base-supervisor
+FROM ubuntu:16.04
 MAINTAINER Sascha Falk <sascha@falk-online.eu>
-
-ENV ZIMBRA_DOWNLOAD_URL="https://files.zimbra.com/downloads/8.8.6_GA/zcs-8.8.6_GA_1906.UBUNTU16_64.20171130041047.tgz"
-ENV ZIMBRA_DOWNLOAD_HASH="8a83e67df40bc0e396d5178980531dbca89a81b648891c1667c53a02486a110e"
 
 # Update image and install additional packages
 # -----------------------------------------------------------------------------
+ENV DEBIAN_FRONTEND=noninteractive
 RUN \
-  # install packages
   apt-get -y update && \
   apt-get -y install \
-    anacron \
+    debootstrap \
+    lsb-release \
+    module-init-tools \
+    nano \
     net-tools && \
-  \
-  # download zimbra
-  mkdir /install && \
-  cd /install && \
-  wget -O /install/zcs.tgz $ZIMBRA_DOWNLOAD_URL && \
-  CALC_HASH=`sha256sum zcs.tgz | cut -d ' ' -f1` && \
-  if [ "$CALC_HASH" != "$ZIMBRA_DOWNLOAD_HASH" ]; then echo "Downloaded file is corrupt!" && exit 1; fi && \
-  \
-  # clean up
   apt-get -y autoremove && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
@@ -29,15 +20,20 @@ RUN \
 # -----------------------------------------------------------------------------
 COPY target /
 
+RUN \
+  mkdir /data && \
+  chmod 750 /docker-entrypoint.sh
+
 # Volumes
 # -----------------------------------------------------------------------------
-VOLUME [ "/opt/zimbra" ]
+VOLUME [ "/data" ]
 
 # Expose ports
 # -----------------------------------------------------------------------------
 # 25/tcp   - SMTP (for incoming mail)
-# 110/tcp  - POP3
-# 143/tcp  - IMAP
+# 80/tcp   - HTTP (for web mail clients)
+# 110/tcp  - POP3 (for mail clients)
+# 143/tcp  - IMAP (for mail clients)
 # 443/tcp  - HTTP over TLS (for web mail clients)
 # 465/tcp  - SMTP over SSL (for mail clients)
 # 587/tcp  - SMTP (submission, for mail clients)
@@ -45,6 +41,11 @@ VOLUME [ "/opt/zimbra" ]
 # 995/tcp  - POP3 over TLS (for mail clients)
 # 5222/tcp - XMPP
 # 5223/tcp - XMPP (default legacy port)
+# 7071/tcp - HTTPS (admin panel, https://<host>/zimbraAdmin)
 # -----------------------------------------------------------------------------
-EXPOSE 25 110 143 443 465 587 993 995 5222 5223
+EXPOSE 25 80 110 143 443 465 587 993 995 5222 5223 7071
 
+# configure container startup
+# -----------------------------------------------------------------------------
+ENTRYPOINT [ "/docker-entrypoint.sh" ]
+CMD [ "run" ]
