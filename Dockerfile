@@ -8,10 +8,7 @@ RUN \
   apt-get -y update && \
   apt-get -y install \
     debootstrap \
-    lsb-release \
-    module-init-tools \
-    nano \
-    net-tools && \
+    iptables && \
   apt-get -y autoremove && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*

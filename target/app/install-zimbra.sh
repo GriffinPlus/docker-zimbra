@@ -9,12 +9,21 @@ SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 # enable updating of /etc/resolv.conf when updating
 echo "resolvconf resolvconf/linkify-resolvconf boolean false" | debconf-set-selections
 
-echo "Installing prerequisites..."
+echo "Updating environment..."
 apt-get -y update
-apt-get -y upgrade
+apt-get -y install software-properties-common
+add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial security"
+add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial universe"
+add-apt-repository --yes "ppa:certbot/certbot"
+apt-get -y update
+apt-get -y dist-upgrade
+
+echo "Installing prerequisites..."
 apt-get -y install \
+    certbot \
     coreutils \
     cron \
+    iptables \
     logrotate \
     lsb-release \
     nano \
@@ -34,17 +43,23 @@ if [ "$CALC_HASH" != "$ZIMBRA_DOWNLOAD_HASH" ]; then
     exit 1
 fi
 
-# extract zimbra to /install/zcs
+echo
+echo "Extracting Zimbra..."
+echo "------------------------------------------------------------------------------------------------------"
 mkdir zcs
 tar -C zcs -xvzf zcs.tgz --strip-components=1
 
-# install zimbra
+echo
+echo "Installing Zimbra..."
+echo "------------------------------------------------------------------------------------------------------"
 cd zcs
 ./install.sh
 
-# remove installation files
+echo
+echo "Removing Zimbra installation files..."
+echo "------------------------------------------------------------------------------------------------------"
 cd /
-rm -R /install
+rm -Rv /install
 
 exit 0
 
