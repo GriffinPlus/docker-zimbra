@@ -29,7 +29,7 @@ docker network create -d bridge \
   frontend
 ```
 
-### Step 1 - Create a Volume for the Zimbra Container
+### Step 2 - Create a Volume for the Zimbra Container
 
 The *zimbra* container installs a minimalistic Ubuntu 16.04 LTS and Zimbra onto a docker volume. You can create a named volume using the following command:
 
@@ -37,14 +37,14 @@ The *zimbra* container installs a minimalistic Ubuntu 16.04 LTS and Zimbra onto 
 docker volume create zimbra-data
 ```
 
-### Step 2 - Install Zimbra
+### Step 3 - Install Zimbra
 
 Before installing Zimbra, you should ensure that your DNS contains the following records:
-- An `A` record mapping the FQDN of the Zimbra container to its public IPv4 address (e.g. zimbra.my-domain.com)
+- An `A` record mapping the FQDN of the Zimbra container to the public IPv4 address of the docker host (e.g. zimbra.my-domain.com), the docker host maps the service ports to the container.
 - An `AAAA` record mapping the FQDN of the Zimbra container to its public IPv6 address (e.g. zimbra.my-domain.com)
 - A `MX` record with the hostname of the Zimbra container (as specified by the `A`/`AAAA` records)
 
-The following command will install *Zimbra* onto the created volume. You will have the chance to customize Zimbra using Zimbra's menu-driven installation script. Please replace the hostname with the hostname you specified in the `A`/`AAAA` DNS records. The installation will take several minutes.
+The following command will install *Zimbra* onto the created volume. You will have the chance to customize Zimbra using Zimbra's menu-driven installation script. Please replace the hostname with the hostname you specified in the `A`/`AAAA` DNS records. Since the IPv4 address via which the container will be publicly accessable, is actually assigned to the docker host, the installation script will complain that there is a problem with the DNS. Just ignore the warning and proceed. It will be working at the end.
 
 ```
 docker run -it \
@@ -74,3 +74,5 @@ docker run -it \
 ```
 
 The container needs a few additional capabilities to work properly. The `NET_ADMIN` capability is needed to configure network interfaces and the *iptables* firewall. The `SYS_ADMIN` capability is needed to set up the chrooted environment where Zimbra is working. The `SYS_PTRACE` capability is needed to get *rsyslog* to start/stop properly. Furthermore *AppArmor* protection must be disabled to set up the chrooted environment as well.
+
+The command `run-and-enter` tell the container to open a shell within the container at the end. You can also directly enter the Ubuntu installation with Zimbra specifying `run-and-enter-zimbra`. The default command is `run`. It simply kicks off a script that initializes the container and waits for the container being stopped to initiate shutting down Zimbra (and related services) gracefully.
