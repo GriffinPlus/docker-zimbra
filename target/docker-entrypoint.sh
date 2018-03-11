@@ -118,6 +118,10 @@ function configure_firewall
     iptables  -t mangle -A PREROUTING -p tcp ! --syn -m conntrack --ctstate NEW -j DROP
     ip6tables -t mangle -A PREROUTING -p tcp ! --syn -m conntrack --ctstate NEW -j DROP
 
+    # allow packets from localhost
+    iptables  -A INPUT -i lo -j ACCEPT
+    ip6tables -A INPUT -i lo -j ACCEPT
+
     # allow packets that belong to established connections
     iptables  -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     ip6tables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT

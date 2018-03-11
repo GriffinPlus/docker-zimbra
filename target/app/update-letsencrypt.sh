@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 HOSTNAME=`/opt/zimbra/bin/zmhostname`
 EMAIL_ADDRESS=`sudo -u zimbra /opt/zimbra/bin/zmlocalconfig smtp_destination | cut -d ' ' -f3`
 CERTBOT_HTTP_PORT=9000
@@ -17,6 +19,8 @@ function deploy_hook
     echo "Deploying the certificate..."
     wget -q -O /tmp/identrust.p7b https://www.identrust.com/doc/ie.p7b
     openssl pkcs7 -print_certs -inform der -in /tmp/identrust.p7b | awk '/subject=\/O=Digital Signature Trust Co.\/CN=DST Root CA X3/,/^-----END CERTIFICATE-----$/' > /tmp/dst-root-ca-x3.pem
+    sudo -u zimbra /opt/zimbra/bin/zmproxyctl stop
+    sudo -u zimbra /opt/zimbra/bin/zmmailboxdctl stop
     cp /etc/letsencrypt/live/$HOSTNAME/privkey.pem /opt/zimbra/ssl/zimbra/commercial/commercial.key
     cp /etc/letsencrypt/live/$HOSTNAME/cert.pem /tmp/cert.pem
     cat /etc/letsencrypt/live/$HOSTNAME/chain.pem /tmp/dst-root-ca-x3.pem > /tmp/chain.pem
@@ -25,7 +29,8 @@ function deploy_hook
     chmod 644 /tmp/cert.pem
     chmod 644 /tmp/chain.pem
     sudo -u zimbra /opt/zimbra/bin/zmcertmgr deploycrt comm /tmp/cert.pem /tmp/chain.pem
-    sudo -u zimbra /opt/zimbra/bin/zmcertmgr viewdeployedcrt
+    # sudo -u zimbra /opt/zimbra/bin/zmcertmgr viewdeployedcrt
+    sudo -u zimbra /opt/zimbra/bin/zmcontrol restart
 }
 
 function post_hook

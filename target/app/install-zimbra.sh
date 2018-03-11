@@ -61,5 +61,10 @@ echo "--------------------------------------------------------------------------
 cd /
 rm -Rv /install
 
+echo
+echo "Scheduling running Certbot daily..."
+echo "------------------------------------------------------------------------------------------------------"
+echo "0 0 * * * root /app/update-letsencrypt.sh >/dev/null 2>&1" > /etc/cron.d/certbot
+
 exit 0
 
