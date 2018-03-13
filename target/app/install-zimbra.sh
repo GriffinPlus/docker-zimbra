@@ -12,8 +12,9 @@ echo "resolvconf resolvconf/linkify-resolvconf boolean false" | debconf-set-sele
 echo "Updating environment..."
 apt-get -y update
 apt-get -y install software-properties-common
-add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial security"
-add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial universe"
+add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial          main restricted universe"
+add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial-updates  main restricted universe"
+add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial-security main restricted universe"
 add-apt-repository --yes "ppa:certbot/certbot"
 apt-get -y update
 apt-get -y dist-upgrade
