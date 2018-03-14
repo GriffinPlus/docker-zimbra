@@ -73,10 +73,6 @@ FIREWALL_ALLOW_TCP_PORTS_IN=${FIREWALL_ALLOW_TCP_PORTS_IN:-25,80,110,143,443,465
 
 function configure_firewall
 {
-    # allow packets from loopback interface
-    iptables  -A INPUT -i lo -j ACCEPT
-    ip6tables -A INPUT -i lo -j ACCEPT
-
     # filter all packets that have RH0 headers (deprecated, can be used for DoS attacks)
     ip6tables -t raw    -A PREROUTING  -m rt --rt-type 0 -j DROP
     ip6tables -t mangle -A POSTROUTING -m rt --rt-type 0 -j DROP
@@ -118,7 +114,7 @@ function configure_firewall
     iptables  -t mangle -A PREROUTING -p tcp ! --syn -m conntrack --ctstate NEW -j DROP
     ip6tables -t mangle -A PREROUTING -p tcp ! --syn -m conntrack --ctstate NEW -j DROP
 
-    # allow packets from localhost
+    # allow packets from loopback interface
     iptables  -A INPUT -i lo -j ACCEPT
     ip6tables -A INPUT -i lo -j ACCEPT
 
