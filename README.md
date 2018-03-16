@@ -72,3 +72,93 @@ docker run -it \
 The container needs a few additional capabilities to work properly. The `NET_ADMIN` capability is needed to configure network interfaces and the *iptables* firewall. The `SYS_ADMIN` capability is needed to set up the chrooted environment where Zimbra is working. The `SYS_PTRACE` capability is needed to get *rsyslog* to start/stop properly. Furthermore *AppArmor* protection must be disabled to set up the chrooted environment as well.
 
 The command `run-and-enter` tell the container to open a shell within the container at the end. You can also directly enter the Ubuntu installation with Zimbra specifying `run-and-enter-zimbra`. The default command is `run`. It simply kicks off a script that initializes the container and waits for the container being stopped to initiate shutting down Zimbra (and related services) gracefully.
+
+As soon as the manual configuration is done, you will most probably only run the container in background using the `run` command:
+```
+docker run --name zimbra \ 
+           --detach \
+           --rm \
+           --ip6=2001:xxxx:xxxx:xxxx::2 \
+           --network frontend \
+           --hostname zimbra.my-domain.com \
+           -p 25:25 \
+           -p 80:80 \
+           -p 110:110 \
+           -p 143:143 \
+           -p 443:443 \
+           -p 465:465 \
+           -p 587:587 \
+           -p 993:993 \
+           -p 995:995 \
+           -p 5222:5222 \
+           -p 5223:5223 \
+           -p 7071:7071 \
+           --volume zimbra-data:/data \
+           --cap-add NET_ADMIN \
+           --cap-add SYS_ADMIN \
+           --cap-add SYS_PTRACE \
+           --security-opt apparmor=unconfined \
+           cloudycube/zimbra \
+           run
+```
+
+## Maintenance
+
+The container installs a complete Ubuntu 16.04 LTS installation plus Zimbra onto the attached volume, if the volume is empty. This also means that running an updated docker image does not automatically update the installation on the volume. This must be done manually. You can get a shell in the container using the following command:
+
+```
+docker exec -it zimbra /bin/bash
+```
+
+The entire Ubuntu installation is kept in `/data`, so you need to *chroot* to dive into environment:
+
+```
+chroot /data /bin/bash
+```
+
+At this point you can - with some restrictions - work the installation as you would do with a regular Ubuntu installation. Some kernel calls are blocked by the docker's default *seccomp* profile, so you might need to adjust this. Furthermore *systemd* is not working, so you need to call init scripts directly to start/stop services.
+
+First of all you should keep the Ubuntu installation up-to-date calling the following commands regularly:
+
+```
+apt-get update
+apt-get upgrade
+```
+
+If a new Zimbra installation is available, you have to update it manually to ensure that customizations done since the initial setup are re-applied properly. A new image that would install a new version of Zimbra **WILL NOT** update an already existing installation.
+
+## Improving Security
+
+### Rejecting false "Mail From" addresses
+
+Zimbra is configured to allow any sender address when receiving mail. This can be a security problem as an attacker could send mails to Zimbra users impersonating other users. The following links provide good guides to improve security:
+- [Rejecting false "mail from" addresses](https://wiki.zimbra.com/wiki/Rejecting_false_%22mail_from%22_addresses)
+- [Enforcing a match between FROM address and sasl username](https://wiki.zimbra.com/wiki/Enforcing_a_match_between_FROM_address_and_sasl_username_8.5)
+
+To sum it up, you need to do the following things to reject false "mail from" addresses and allow authenticated users to use their own identities (mail adresses) only:
+
+```
+sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdRejectUnlistedRecipient yes
+sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdRejectUnlistedSender yes
+sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdSenderLoginMaps proxy:ldap:/opt/zimbra/conf/ldap-slm.cf +zimbraMtaSmtpdSenderRestrictions reject_authenticated_sender_login_mismatch
+```
+
+Furthermore you need to edit the file `/opt/zimbra/conf/zmconfigd/smtpd_sender_restrictions.cf` and add `reject_sender_login_mismatch` after the `permit_mynetworks` line. It should look like the following:
+
+```
+%%exact VAR:zimbraMtaSmtpdSenderRestrictions reject_authenticated_sender_login_mismatch%%
+%%contains VAR:zimbraMtaSmtpdSenderRestrictions check_sender_access lmdb:/opt/zimbra/conf/postfix_reject_sender%%
+%%contains VAR:zimbraServiceEnabled cbpolicyd^ check_policy_service inet:localhost:%%zimbraCBPolicydBindPort%%%%
+%%contains VAR:zimbraServiceEnabled amavis^ check_sender_access regexp:/opt/zimbra/common/conf/tag_as_originating.re%%
+permit_mynetworks
+reject_sender_login_mismatch
+permit_sasl_authenticated
+permit_tls_clientcerts
+%%contains VAR:zimbraServiceEnabled amavis^ check_sender_access regexp:/opt/zimbra/common/conf/tag_as_foreign.re%%
+```
+
+The server needs to be restarted to apply the changes:
+
+```
+sudo -u zimbra /opt/zimbra/bin/zmcontrol restart
+```
