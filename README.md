@@ -8,7 +8,7 @@ Forks](https://img.shields.io/github/forks/cloudycube/docker-zimbra.svg?label=gi
 
 ## Overview
 
-This image contains everything needed to download, setup and run the [Zimbra](https://www.zimbra.com/) colaboration suite. The image itself does not contain Zimbra. On the first start, the container installs a minimalistic Ubuntu 16.04 LTS onto a docker volume. This installation serves as the root filesystem for Zimbra, so Zimbra can work with the environment and everything is kept consistent and persistent - even if the container is updated. Although it is a docker container, it actually behaves more like a LXD container that integrates into the docker ecosystem. This also implys that you must take care of updating the Ubuntu installation and Zimbra regularly. Pulling a new image version **does not** automatically update the Ubuntu installation on the docker volume.
+This image contains everything needed to download, setup and run the [Zimbra](https://www.zimbra.com/) colaboration suite. The image itself does not contain Zimbra. On the first start, the container installs a minimalistic Ubuntu 16.04 LTS onto a docker volume. This installation serves as the root filesystem for Zimbra, so Zimbra can work with the environment and everything is kept consistent and persistent - even if the container is updated. This also implys that you must take care of updating the Ubuntu installation and Zimbra regularly. Pulling a new image version **does not** automatically update the Ubuntu installation on the docker volume.
 
 ## Usage
 
@@ -71,7 +71,7 @@ docker run -it \
 
 The container needs a few additional capabilities to work properly. The `NET_ADMIN` capability is needed to configure network interfaces and the *iptables* firewall. The `SYS_ADMIN` capability is needed to set up the chrooted environment where Zimbra is working. The `SYS_PTRACE` capability is needed to get *rsyslog* to start/stop properly. Furthermore *AppArmor* protection must be disabled to set up the chrooted environment as well.
 
-The command `run-and-enter` tell the container to open a shell within the container at the end. You can also directly enter the Ubuntu installation with Zimbra specifying `run-and-enter-zimbra`. The default command is `run`. It simply kicks off a script that initializes the container and waits for the container being stopped to initiate shutting down Zimbra (and related services) gracefully.
+The command `run-and-enter` tells the container to open a shell within the container at the end. You can also directly enter the Ubuntu installation with Zimbra specifying `run-and-enter-zimbra`. The default command is `run`. It simply kicks off a script that initializes the container and waits for the container being stopped to initiate shutting down Zimbra (and related services) gracefully.
 
 As soon as the manual configuration is done, you will most probably only run the container in background using the `run` command:
 ```
@@ -127,7 +127,47 @@ apt-get upgrade
 
 If a new Zimbra installation is available, you have to update it manually to ensure that customizations done since the initial setup are re-applied properly. A new image that would install a new version of Zimbra **WILL NOT** update an already existing installation.
 
-## Improving Security
+## Security
+
+### Transport Security (TLS)
+
+The container fetches free certificates from the *Let's Encrypt CA* and configures Zimbra to use them appropriately. At the moment only 2048 bit RSA certificates are supported. It supports cipher suites providing a reasonable level of security without sacrificing compatibility and speed only. Furthermore 4096 bit DH parameters are generated improving the security level of the key exchange. As long as Zimbra's proxy is enabled - which should always be the case - HTTP Transport Security (HSTS) is enabled to tell web browsers to connect to Zimbra over HTTPS only.
+
+The configuration passes the popular SSL/TLS server tests:
+- [SSL Labs](https://www.ssllabs.com/ssltest/) (supports HTTPS only)
+- [Online Domain Tools](http://ssl-checker.online-domain-tools.com/) (supports HTTPS, SMTP, IMAP, POP)
+- [High-Tech-Bridge](https://www.htbridge.com/ssl/) (supports HTTPS, SMTP, IMAP, POP)
+
+Feel free to check your installation by yourself and open an issue, if there should be something wrong with the configuration. I will try to fix it as soon as possible.
+
+### Firewall
+
+The container configures the firewall allowing only the following services to be accessed from the public internet.
+
+| Port     | Description                                           |
+| :------- | :---------------------------------------------------- |
+| 25/tcp   | SMTP                                                  |
+| 80/tcp   | HTTP                                                  |
+| 110/tcp  | POP3                                                  |
+| 143/tcp  | IMAP                                                  |
+| 443/tcp  | HTTP over TLS                                         |
+| 465/tcp  | SMTP over SSL                                         |
+| 587/tcp  | SMTP (submission, for mail clients)                   |
+| 993/tcp  | IMAP over TLS                                         |
+| 995/tcp  | POP3 over TLS                                         |
+| 5222/tcp | XMPP                                                  |
+| 5223/tcp | XMPP (default legacy port)                            |
+| 7071/tcp | HTTPS (admin panel, https://<host>/zimbraAdmin)       |
+
+Access to backend services, e.g. LDAP, MariaDB or the Jetty server, is blocked by the packet filter. Access to webmail or the admin panel via HTTP(S) as well as mail access via POP(S) and IMAP(S) are proxied by NGINX shipped with Zimbra adding an extra layer of security. If you keep the default settings when installing Zimbra using this image, inter-process communication will configured to work without encryption to speed up operation. This is not an issue as everything is running on the same host, even within the same container.
+
+Furthermore the packet filter comes with a couple of rules protecting against common threats:
+- TCP floods (except SYN floods)
+- Bogus flags in TCP packets
+- RH0 packets (can be used for DoS attacks)
+- Ping of Death
+
+## Manual Adjustments Improving Security
 
 ### Rejecting false "Mail From" addresses
 
