@@ -169,6 +169,26 @@ Furthermore the packet filter comes with a couple of rules protecting against co
 
 ## Manual Adjustments Improving Security
 
+### Enabling Domain Key Identified Mail (DKIM)
+
+Domain Keys Identified Mail (DKIM) is an email authentication method designed to detect email spoofing. It allows the receiver to check that an email claimed to have come from a specific domain was indeed authorized by the owner of that domain. It is intended to prevent forged sender addresses in emails, a technique often used in phishing and email spam.
+
+In technical terms, DKIM lets a domain associate its name with an email message by affixing a digital signature to it. Verification is carried out using the signer's public key published in the DNS. A valid signature guarantees that some parts of the email (possibly including attachments) have not been modified since the signature was affixed. Usually, DKIM signatures are not visible to end-users, and are affixed or verified by the infrastructure rather than message's authors and recipients. In that respect, DKIM differs from end-to-end digital signatures.
+
+To enable DKIM signing you only need to run the following command (replace the domain name accordingly):
+
+```
+sudo -u zimbra /opt/zimbra/libexec/zmdkimkeyutil -a -d my-domain.com
+```
+
+This will create a 2048 bit RSA key and enable DKIM signing for the specified domain. To finish the configuration, the TXT record returned by `zmdkimkeyutil` must be published in your DNS. The name of the TXT record looks like the `AB6EFD30-2AA8-11E8-ACDA-A71CCC6989A6._domainkey` whereas `AB6EFD30-2AA8-11E8-ACDA-A71CCC6989A6` is the DKIM selector a message refers to. The value of the DKIM record looks like the following:
+
+```
+v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmQ0nDvzpJn4b6nvvTDw2N0/Glcj24w0ZyTgNW1h5zNEEmxiH+7TuTcRvCVmBIHrY/anAtdiMZ60leQqo2USjI3ixE7Y1AewvjP95yS/WRq3Khoi7E2JsucreMcrf5WkVPsJd6G1Aw2uBGG/h/lyfjGYtpOjjnNqEb9Nxh3eMwATYNFUI55PVuTI405yR12SUPRomI2QvqiqTW2
+```
+
+After a few minutes you should be able to check whether DKIM signing works using the [DKIM Test](http://www.appmaildev.com/en/dkim). You will just have to send an email to the generated address and wait for the report.
+
 ### Rejecting false "Mail From" addresses
 
 Zimbra is configured to allow any sender address when receiving mail. This can be a security problem as an attacker could send mails to Zimbra users impersonating other users. The following links provide good guides to improve security:
