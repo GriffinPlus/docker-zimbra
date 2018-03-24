@@ -1,4 +1,4 @@
-# Docker Image with Zimbra 8.8.6 (FOSS Edition)
+# Docker Image with Zimbra 8.8.7 (FOSS Edition)
 
 [![Build Status](https://travis-ci.org/cloudycube/docker-zimbra.svg?branch=master)](https://travis-ci.org/cloudycube/docker-zimbra) [![Docker 
 Pulls](https://img.shields.io/docker/pulls/cloudycube/zimbra.svg)](https://hub.docker.com/r/cloudycube/zimbra) [![Github 
