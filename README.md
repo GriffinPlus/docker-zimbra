@@ -191,7 +191,19 @@ After a few minutes you should be able to check whether DKIM signing works using
 
 ### Sender Policy Framework (SPF)
 
-...TODO...
+*Sender Policy Framework (SPF)* is a simple email-validation system designed to detect email spoofing by providing a mechanism to allow receiving mail exchangers to check that incoming mail from a domain comes from a host authorized by that domain's administrators. The list of authorized sending hosts for a domain is published in the Domain Name System (DNS) records for that domain in the form of a specially formatted TXT record. Email spam and phishing often use forged "from" addresses, so publishing and checking SPF records can be considered anti-spam techniques.
+
+To enable SPF you need to add a TXT record to your DNS. The name of the TXT record must be the name of the domain the SPF policy refers to. The value of the TXT record defines the policy. A simple, but effective policy is:
+
+```
+v=spf1 mx a ~all
+```
+
+This instructs other mail servers to accept mail from a mail server whose IP address is listed by `A` or `AAAA` records in the DNS of the same domain. Furthermore all mail exchangers of the domain (identified by `MX` records) are allowed to send mail for the domain. At the end `~all` tells other mail servers to treat violations of the policy as *soft fails*, i.e. the mail is tagged, but not rejected. This is primarily useful in conjunction with a DMARC policy (see below). The [SPF syntax documentation](http://www.openspf.org/SPF_Record_Syntax) shows how to craft a custom SPF policy.
+
+A few minutes after setting the SPF record you can use one of the following tools to check it:
+- [MxToolbox](https://mxtoolbox.com/spf.aspx)
+- [Dmarcian SPF Surveyer](https://dmarcian.com/spf-survey/)
 
 ### Domain-based Message Authentication, Reporting and Conformance (DMARC)
 
@@ -205,9 +217,12 @@ To enable DMARC you need to add a TXT record to your DNS. The name of the TXT re
 v=DMARC1; p=quarantine; rua=mailto:dmarc@my-domain.com; ruf=mailto:dmarc@my-domain.com; sp=quarantine
 ```
 
-This instructs other mail servers to accept mails only, if the DKIM signature is present and valid and/or the SPF policy is met. If both checks fail, the mail should be put aside for analysis (quarantine). The official [DMARC website](https://dmarc.org) provides a comprehensive documentation how DMARC works and how it can be configured to suit your needs (if you need more fine-grained control over DMARC parameters). Mail servers will send aggregate reports (`rua`) and forensic data (`ruf`) to `dmarc@my-domain.com`.
+This instructs other mail servers to accept mails only, if the DKIM signature is present and valid and/or the SPF policy is met. If both checks fail, the mail should not be delivered and put aside (quarantined). Mail servers will send aggregate reports (`rua`) and forensic data (`ruf`) to `dmarc@my-domain.com`. The official [DMARC website](https://dmarc.org) provides a comprehensive documentation how DMARC works and how it can be configured to suit your needs (if you need more fine-grained control over DMARC parameters). [Kitterman's DMARC Assistent](http://www.kitterman.com/dmarc/assistant.html) helps with setting up a custom DMARC policy.
 
-A few minutes after setting the DMARC record in your DNS, you can check it using [MxToolbox](https://mxtoolbox.com/DMARC.aspx). To check the entire workflow with DKIM, SPF and DMARC the [HAD Email Test Tool](https://email-test.had.dnsops.gov/) comes in handy.
+A few minutes after setting the DMARC record in your DNS, you can check it using one of the following tools:
+- [MxToolbox](https://mxtoolbox.com/DMARC.aspx)
+- [Dmarcian DMARC Inspector](https://dmarcian.com/dmarc-inspector/)
+- [Proofpoint DMARC Check](https://stopemailfraud.proofpoint.com/dmarc/)
 
 ### Rejecting false "Mail From" addresses
 
