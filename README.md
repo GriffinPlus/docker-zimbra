@@ -144,20 +144,20 @@ Feel free to check your installation by yourself and open an issue, if there sho
 
 The container configures the firewall allowing only the following services to be accessed from the public internet.
 
-| Port     | Description                                           |
-| :------- | :---------------------------------------------------- |
-| 25/tcp   | SMTP                                                  |
-| 80/tcp   | HTTP                                                  |
-| 110/tcp  | POP3                                                  |
-| 143/tcp  | IMAP                                                  |
-| 443/tcp  | HTTP over TLS                                         |
-| 465/tcp  | SMTP over SSL                                         |
-| 587/tcp  | SMTP (submission, for mail clients)                   |
-| 993/tcp  | IMAP over TLS                                         |
-| 995/tcp  | POP3 over TLS                                         |
-| 5222/tcp | XMPP                                                  |
-| 5223/tcp | XMPP (default legacy port)                            |
-| 7071/tcp | HTTPS (admin panel, https://<host>/zimbraAdmin)       |
+| Port     | Description                             |
+| :------- | :-------------------------------------- |
+| 25/tcp   | SMTP                                    |
+| 80/tcp   | HTTP                                    |
+| 110/tcp  | POP3                                    |
+| 143/tcp  | IMAP                                    |
+| 443/tcp  | HTTP over TLS                           |
+| 465/tcp  | SMTP over SSL                           |
+| 587/tcp  | SMTP (submission, for mail clients)     |
+| 993/tcp  | IMAP over TLS                           |
+| 995/tcp  | POP3 over TLS                           |
+| 5222/tcp | XMPP                                    |
+| 5223/tcp | XMPP (default legacy port)              |
+| 7071/tcp | HTTPS (admin panel)                     |
 
 Access to backend services, e.g. LDAP, MariaDB or the Jetty server, is blocked by the packet filter. Access to webmail or the admin panel via HTTP(S) as well as mail access via POP(S) and IMAP(S) are proxied by NGINX shipped with Zimbra adding an extra layer of security. If you keep the default settings when installing Zimbra using this image, inter-process communication will configured to work without encryption to speed up operation. This is not an issue as everything is running on the same host, even within the same container.
 
@@ -171,7 +171,7 @@ Furthermore the packet filter comes with a couple of rules protecting against co
 
 ### Enabling Domain Key Identified Mail (DKIM)
 
-Domain Keys Identified Mail (DKIM) is an email authentication method designed to detect email spoofing. It allows the receiver to check that an email claimed to have come from a specific domain was indeed authorized by the owner of that domain. It is intended to prevent forged sender addresses in emails, a technique often used in phishing and email spam.
+*Domain Keys Identified Mail (DKIM)* is an email authentication method designed to detect email spoofing. It allows the receiver to check that an email claimed to have come from a specific domain was indeed authorized by the owner of that domain. It is intended to prevent forged sender addresses in emails, a technique often used in phishing and email spam.
 
 In technical terms, DKIM lets a domain associate its name with an email message by affixing a digital signature to it. Verification is carried out using the signer's public key published in the DNS. A valid signature guarantees that some parts of the email (possibly including attachments) have not been modified since the signature was affixed. Usually, DKIM signatures are not visible to end-users, and are affixed or verified by the infrastructure rather than message's authors and recipients. In that respect, DKIM differs from end-to-end digital signatures.
 
@@ -188,6 +188,26 @@ v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmQ0nDvzpJn4b6nvvTD
 ```
 
 After a few minutes you should be able to check whether DKIM signing works using the [DKIM Test](http://www.appmaildev.com/en/dkim). You will just have to send an email to the generated address and wait for the report.
+
+### Sender Policy Framework (SPF)
+
+...TODO...
+
+### Domain-based Message Authentication, Reporting and Conformance (DMARC)
+
+*Domain-based Message Authentication, Reporting and Conformance (DMARC)* is an email-validation system designed to detect and prevent email spoofing. It is intended to combat certain techniques often used in phishing and email spam, such as emails with forged sender addresses that appear to originate from legitimate organizations. Specified in RFC 7489, DMARC counters the illegitimate usage of the exact domain name in the `From:` field of email message headers.
+
+DMARC is built on top of the two mechanisms discussed above, *DomainKeys Identified Mail (DKIM)* and the *Sender Policy Framework (SPF)*. It allows the administrative owner of a domain to publish a policy on which mechanism (DKIM, SPF or both) is employed when sending email from that domain and how the receiver should deal with failures. Additionally, it provides a reporting mechanism of actions performed under those policies. It thus coordinates the results of DKIM and SPF and specifies under which circumstances the `From:` header field, which is often visible to end users, should be considered legitimate.
+
+To enable DMARC you need to add a TXT record to your DNS. The name of the TXT record must be `_dmarc`. The value of the TXT record defines how mail servers receiving mail from your domain should act. A simple, but proven record is...
+
+```
+v=DMARC1; p=quarantine; rua=mailto:dmarc@my-domain.com; ruf=mailto:dmarc@my-domain.com; sp=quarantine
+```
+
+This instructs other mail servers to accept mails only, if the DKIM signature is present and valid and/or the SPF policy is met. If both checks fail, the mail should be put aside for analysis (quarantine). The official [DMARC website](https://dmarc.org) provides a comprehensive documentation how DMARC works and how it can be configured to suit your needs (if you need more fine-grained control over DMARC parameters). Mail servers will send aggregate reports (`rua`) and forensic data (`ruf`) to `dmarc@my-domain.com`.
+
+A few minutes after setting the DMARC record in your DNS, you can check it using [MxToolbox](https://mxtoolbox.com/DMARC.aspx). To check the entire workflow with DKIM, SPF and DMARC the [HAD Email Test Tool](https://email-test.had.dnsops.gov/) comes in handy.
 
 ### Rejecting false "Mail From" addresses
 
@@ -216,6 +236,8 @@ permit_sasl_authenticated
 permit_tls_clientcerts
 %%contains VAR:zimbraServiceEnabled amavis^ check_sender_access regexp:/opt/zimbra/common/conf/tag_as_foreign.re%%
 ```
+
+**As all manual changes done to Zimbra's configuration files changes to `smtpd_sender_restrictions.cf` are overwritten when Zimbra is upgraded. The change must be re-applied after an upgrade!**
 
 The server needs to be restarted to apply the changes:
 
