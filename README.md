@@ -167,6 +167,31 @@ Furthermore the packet filter comes with a couple of rules protecting against co
 - RH0 packets (can be used for DoS attacks)
 - Ping of Death
 
+### Brute Force Detection
+
+The container configures Zimbra's brute-force detection *zmauditswatch*. It monitors authentication activity and sends an email to a configured recipient notifying the recipient of a possible attack. The default recipient is the administrator (as returned by `zmlocalconfig smtp_destination`). It does not block the attack!
+
+The initial parameter set is as follows:
+
+| Parameter                         | Value   | Description                       
+| :-------------------------------- | :-----: | :--------------------------------------------------------------------------------------
+| zimbra_swatch_notice_user         | *admin* | The email address of the person receiving notifications about possible brute-force attacks.
+| zimbra_swatch_threshold_seconds   | 3600    | Detection time the thresholds below refer to (in seconds).
+| zimbra_swatch_ipacct_threshold    | 10      | IP/Account hash check which warns on 10 auth failures from an IP/Account combo within the specified time.
+| zimbra_swatch_acct_threshold      | 15      | Account check which warns on *xx* auth failures from any IP within the specified time. Attempts to detect a distributed hijack based attack on a single account.
+| zimbra_swatch_ip_threshold        | 20      | IP check which warns on *xx* auth failures to any account within the specified time. Attempts to detect a single host based attack across multiple accounts.
+| zimbra_swatch_total_threshold     | 100     | Total auth failure check which warns on 100 auth failures from any IP to any account within the specified time.
+
+In most cases the parameters should be ok, but if you need to tune them, the following commands can be used to change the parameters:
+```
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_notice_user=admin@my-domain.com
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_threshold_seconds=3600
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_ipacct_threshold=10
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_acct_threshold=15
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_ip_threshold=20
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_total_threshold=100
+```
+
 ## Manual Adjustments Improving Security
 
 ### Enabling Domain Key Identified Mail (DKIM)
