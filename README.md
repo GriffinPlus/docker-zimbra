@@ -177,10 +177,10 @@ The initial parameter set is as follows:
 | :-------------------------------- | :-----: | :--------------------------------------------------------------------------------------
 | zimbra_swatch_notice_user         | *admin* | The email address of the person receiving notifications about possible brute-force attacks.
 | zimbra_swatch_threshold_seconds   | 3600    | Detection time the thresholds below refer to (in seconds).
-| zimbra_swatch_ipacct_threshold    | 10      | IP/Account hash check which warns on 10 auth failures from an IP/Account combo within the specified time.
+| zimbra_swatch_ipacct_threshold    | 10      | IP/Account hash check which warns on *xx* auth failures from an IP/Account combo within the specified time.
 | zimbra_swatch_acct_threshold      | 15      | Account check which warns on *xx* auth failures from any IP within the specified time. Attempts to detect a distributed hijack based attack on a single account.
 | zimbra_swatch_ip_threshold        | 20      | IP check which warns on *xx* auth failures to any account within the specified time. Attempts to detect a single host based attack across multiple accounts.
-| zimbra_swatch_total_threshold     | 100     | Total auth failure check which warns on 100 auth failures from any IP to any account within the specified time.
+| zimbra_swatch_total_threshold     | 100     | Total auth failure check which warns on *xx* auth failures from any IP to any account within the specified time.
 
 In most cases the parameters should be ok, but if you need to tune them, the following commands can be used to change the parameters:
 ```
@@ -203,7 +203,7 @@ In technical terms, DKIM lets a domain associate its name with an email message 
 To enable DKIM signing you only need to run the following command (replace the domain name accordingly):
 
 ```
-sudo -u zimbra /opt/zimbra/libexec/zmdkimkeyutil -a -d my-domain.com
+sudo -u zimbra -- /opt/zimbra/libexec/zmdkimkeyutil -a -d my-domain.com
 ```
 
 This will create a 2048 bit RSA key and enable DKIM signing for the specified domain. To finish the configuration, the TXT record returned by `zmdkimkeyutil` must be published in your DNS. The name of the TXT record looks like the `AB6EFD30-2AA8-11E8-ACDA-A71CCC6989A6._domainkey` whereas `AB6EFD30-2AA8-11E8-ACDA-A71CCC6989A6` is the DKIM selector a message refers to. The value of the DKIM record looks like the following:
@@ -258,9 +258,9 @@ Zimbra is configured to allow any sender address when receiving mail. This can b
 To sum it up, you need to do the following things to reject false "mail from" addresses and allow authenticated users to use their own identities (mail adresses) only:
 
 ```
-sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdRejectUnlistedRecipient yes
-sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdRejectUnlistedSender yes
-sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdSenderLoginMaps proxy:ldap:/opt/zimbra/conf/ldap-slm.cf +zimbraMtaSmtpdSenderRestrictions reject_authenticated_sender_login_mismatch
+sudo -u zimbra -- /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdRejectUnlistedRecipient yes
+sudo -u zimbra -- /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdRejectUnlistedSender yes
+sudo -u zimbra -- /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdSenderLoginMaps proxy:ldap:/opt/zimbra/conf/ldap-slm.cf +zimbraMtaSmtpdSenderRestrictions reject_authenticated_sender_login_mismatch
 ```
 
 Furthermore you need to edit the file `/opt/zimbra/conf/zmconfigd/smtpd_sender_restrictions.cf` and add `reject_sender_login_mismatch` after the `permit_mynetworks` line. It should look like the following:
@@ -282,5 +282,5 @@ permit_tls_clientcerts
 The server needs to be restarted to apply the changes:
 
 ```
-sudo -u zimbra /opt/zimbra/bin/zmcontrol restart
+sudo -u zimbra -- /opt/zimbra/bin/zmcontrol restart
 ```
