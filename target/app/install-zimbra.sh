@@ -23,6 +23,7 @@ apt-get -y dist-upgrade
 echo
 echo "Installing prerequisites..."
 apt-get -y install \
+    apticron \
     certbot \
     coreutils \
     cron \
@@ -56,6 +57,43 @@ echo
 echo "Installing Zimbra..."
 cd zcs
 ./install.sh
+
+echo
+ADMIN_EMAIL=`sudo -u zimbra /opt/zimbra/bin/zmlocalconfig smtp_destination | cut -d ' ' -f3`
+echo "Configuring apticron to send update notifications to $ADMIN_EMAIL..."
+echo "EMAIL=\"$ADMIN_EMAIL\"" >> /etc/apticron/apticron.conf
+
+echo
+echo "Configuring Zimbra's brute-force detector (auditswatch) to send notifications to $ADMIN_EMAIL..."
+# download and install missing auditswatch file
+# ----------------------------------------------------------------------------------------------------------
+mkdir -p /install/auditswatch
+cd /install/auditswatch
+wget -O auditswatch http://bugzilla-attach.zimbra.com/attachment.cgi?id=66723
+mv auditswatch  /opt/zimbra/libexec/auditswatch
+chown root:root /opt/zimbra/libexec/auditswatch
+chmod 0755 /opt/zimbra/libexec/auditswatch
+
+# configure auditswatch
+# ----------------------------------------------------------------------------------------------------------
+# The email address that we want to be worn when all the conditions happens.
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_notice_user=$ADMIN_EMAIL
+# The duration within the thresholds below refer to (in seconds)
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_threshold_seconds=3600
+# IP/Account hash check which warns on 10 auth failures from an IP/Account combo within the specified time.
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_ipacct_threshold=10
+# Account check which warns on 15 auth failures from any IP within the specified time.
+# Attempts to detect a distributed hijack based attack on a single account.
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_acct_threshold=15
+# IP check which warns on 20 auth failures to any account within the specified time.
+# Attempts to detect a single host based attack across multiple accounts.
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_ip_threshold=20
+# Total auth failure check which warns on 100 auth failures from any IP to any account within the specified time.
+# The recommended value on this is guestimated at 1% of active accounts for the Mailbox.
+sudo -u zimbra -- /opt/zimbra/bin/zmlocalconfig -e zimbra_swatch_total_threshold=100
+# check whether the service starts as expected
+# ----------------------------------------------------------------------------------------------------------
+sudo -u zimbra -- /opt/zimbra/bin/zmauditswatchctl start
 
 echo
 echo "Removing Zimbra installation files..."
