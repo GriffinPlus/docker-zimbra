@@ -110,13 +110,13 @@ The container installs a complete Ubuntu 16.04 LTS installation plus Zimbra onto
 docker exec -it zimbra /bin/bash
 ```
 
-The entire Ubuntu installation is kept in `/data`, so you need to *chroot* to dive into environment:
+The entire Ubuntu installation is kept in `/data`, so you need to *chroot* to dive into the environment:
 
 ```
 chroot /data /bin/bash
 ```
 
-At this point you can - with some restrictions - work the installation as you would do with a regular Ubuntu installation. Some kernel calls are blocked by the docker's default *seccomp* profile, so you might need to adjust this. Furthermore *systemd* is not working, so you need to call init scripts directly to start/stop services.
+At this point you can - with some restrictions - work with the installation as you would do with a regular Ubuntu installation. Some kernel calls are blocked by the docker's default *seccomp* profile, so you might need to adjust this. Furthermore *systemd* is not working, so you need to call init scripts directly to start/stop services.
 
 First of all you should keep the Ubuntu installation up-to-date calling the following commands regularly:
 
