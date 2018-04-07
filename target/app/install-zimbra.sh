@@ -2,8 +2,8 @@
 
 set -e
 
-ZIMBRA_DOWNLOAD_URL="https://files.zimbra.com/downloads/8.8.7_GA/zcs-8.8.7_GA_1964.UBUNTU16_64.20180223145016.tgz"
-ZIMBRA_DOWNLOAD_HASH="c1ae07a77d8337832114c87a75c4d5b7245a4ae1ce428bd6eb8bc178249587cc"
+ZIMBRA_DOWNLOAD_URL="https://files.zimbra.com/downloads/8.8.8_GA/zcs-8.8.8_GA_2009.UBUNTU16_64.20180322150747.tgz"
+ZIMBRA_DOWNLOAD_HASH="55ddf3ca87800a3a9116b5c737ee6740817b13184369bfdef15ec32b9ef78a38"
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
 # enable updating of /etc/resolv.conf when updating
