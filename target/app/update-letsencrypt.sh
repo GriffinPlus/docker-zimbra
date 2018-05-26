@@ -10,6 +10,8 @@ SCRIPT_PATH=`realpath "$0"`
 function pre_hook
 {
     echo "Redirecting HTTP port to Certbot..."
+    iptables  -I INPUT 1 -i eth0 -p tcp --dport $CERTBOT_HTTP_PORT -j ACCEPT
+    ip6tables -I INPUT 1 -i eth0 -p tcp --dport $CERTBOT_HTTP_PORT -j ACCEPT
     iptables  -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port $CERTBOT_HTTP_PORT
     ip6tables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port $CERTBOT_HTTP_PORT
 }
@@ -36,6 +38,8 @@ function deploy_hook
 function post_hook
 {
     echo "Removing redirection of the HTTP port..."
+    iptables  -D INPUT -i eth0 -p tcp --dport $CERTBOT_HTTP_PORT -j ACCEPT
+    ip6tables -D INPUT -i eth0 -p tcp --dport $CERTBOT_HTTP_PORT -j ACCEPT
     iptables  -t nat -D PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port $CERTBOT_HTTP_PORT
     ip6tables -t nat -D PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port $CERTBOT_HTTP_PORT
 }
