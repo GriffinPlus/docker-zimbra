@@ -19,7 +19,7 @@ function pre_hook
 function deploy_hook
 {
     echo "Deploying the certificate..."
-    wget -q -O /tmp/identrust.p7b https://www.identrust.com/doc/ie.p7b
+    wget -q -O /tmp/identrust.p7b https://www.identrust.com/node/935
     openssl pkcs7 -print_certs -inform der -in /tmp/identrust.p7b | awk '/subject=\/O=Digital Signature Trust Co.\/CN=DST Root CA X3/,/^-----END CERTIFICATE-----$/' > /tmp/dst-root-ca-x3.pem
     sudo -u zimbra /opt/zimbra/bin/zmproxyctl stop
     sudo -u zimbra /opt/zimbra/bin/zmmailboxdctl stop
