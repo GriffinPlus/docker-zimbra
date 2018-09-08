@@ -124,4 +124,8 @@ echo
 echo "Enabling HTTP Strict Transport Security (HSTS)..."
 sudo -u zimbra /opt/zimbra/bin/zmprov mcf +zimbraResponseHeader "Strict-Transport-Security: max-age=31536000"
 
+echo
+echo "Configuring default COS to use selected persona in the Return-Path of the mail envelope (important for privacy)."
+sudo -u zimbra /opt/zimbra/bin/zmprov mc default zimbraSmtpRestrictEnvelopeFrom FALSE
+
 exit 0
