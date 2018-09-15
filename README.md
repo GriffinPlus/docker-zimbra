@@ -1,10 +1,10 @@
 # Docker Image with Zimbra 8.8.9 (FOSS Edition)
 
-[![Build Status](https://travis-ci.org/cloudycube/docker-zimbra.svg?branch=master)](https://travis-ci.org/cloudycube/docker-zimbra) [![Docker 
-Pulls](https://img.shields.io/docker/pulls/cloudycube/zimbra.svg)](https://hub.docker.com/r/cloudycube/zimbra) [![Github 
-Stars](https://img.shields.io/github/stars/cloudycube/docker-zimbra.svg?label=github%20%E2%98%85)](https://github.com/cloudycube/docker-zimbra) [![Github 
-Stars](https://img.shields.io/github/contributors/cloudycube/docker-zimbra.svg)](https://github.com/cloudycube/docker-zimbra) [![Github 
-Forks](https://img.shields.io/github/forks/cloudycube/docker-zimbra.svg?label=github%20forks)](https://github.com/cloudycube/docker-zimbra)
+[![Build Status](https://travis-ci.org/GriffinPlus/docker-zimbra.svg?branch=master)](https://travis-ci.org/GriffinPlus/docker-zimbra)
+[![Docker Pulls](https://img.shields.io/docker/pulls/griffinplus/zimbra.svg)](https://hub.docker.com/r/griffinplus/zimbra)
+[![Github Stars](https://img.shields.io/github/stars/griffinplus/docker-zimbra.svg?label=github%20%E2%98%85)](https://github.com/griffinplus/docker-zimbra)
+[![Github Stars](https://img.shields.io/github/contributors/griffinplus/docker-zimbra.svg)](https://github.com/griffinplus/docker-zimbra) 
+[![Github Forks](https://img.shields.io/github/forks/griffinplus/docker-zimbra.svg?label=github%20forks)](https://github.com/griffinplus/docker-zimbra)
 
 ## Overview
 
@@ -65,7 +65,7 @@ docker run -it \
            --cap-add SYS_ADMIN \
            --cap-add SYS_PTRACE \
            --security-opt apparmor=unconfined \
-           cloudycube/zimbra \
+           griffinplus/zimbra \
            run-and-enter
 ```
 
@@ -98,7 +98,7 @@ docker run --name zimbra \
            --cap-add SYS_ADMIN \
            --cap-add SYS_PTRACE \
            --security-opt apparmor=unconfined \
-           cloudycube/zimbra \
+           griffinplus/zimbra \
            run
 ```
 

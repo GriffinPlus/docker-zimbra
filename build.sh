@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t cloudycube/zimbra .
+docker build -t griffinplus/zimbra .

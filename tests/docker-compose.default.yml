@@ -2,4 +2,4 @@ version: '2'
 
 services:
   zimbra:
-    image: cloudycube/zimbra
+    image: griffinplus/zimbra

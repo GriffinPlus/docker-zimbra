@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script starts a new instance of the cloudycube/docker-zimbra container and opens a shell in it.
+# This script starts a new instance of the griffinplus/zimbra container and opens a shell in it.
 # It is useful in cases where some debugging is needed...
 
 IPV4="aaa.bbb.ccc.ddd"              # ipv4 of docker host (maps the ports to the container)
@@ -34,5 +34,5 @@ docker run -it \
            --cap-add SYS_ADMIN \
            --cap-add SYS_PTRACE \
            --security-opt apparmor=unconfined \
-           cloudycube/zimbra \
+           griffinplus/zimbra \
            run-and-enter
