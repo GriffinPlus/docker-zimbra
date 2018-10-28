@@ -10,6 +10,7 @@ function prepare_chroot
     mount -o bind /dev/pts $ZIMBRA_ENVIRONMENT_PATH/dev/pts
     mount -t sysfs /sys $ZIMBRA_ENVIRONMENT_PATH/sys
     mount -t proc /proc $ZIMBRA_ENVIRONMENT_PATH/proc
+    rm -f $ZIMBRA_ENVIRONMENT_PATH/etc/mtab
     cp /proc/mounts $ZIMBRA_ENVIRONMENT_PATH/etc/mtab
     cp /etc/hosts $ZIMBRA_ENVIRONMENT_PATH/etc
     mount -o bind /etc/hosts $ZIMBRA_ENVIRONMENT_PATH/etc/hosts
