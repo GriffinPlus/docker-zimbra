@@ -1,6 +1,6 @@
-# Docker Image with Zimbra 8.8.9 (FOSS Edition)
+# Docker Image with Zimbra 8.8.11 GA (FOSS Edition)
 
-[![Build Status](https://travis-ci.org/GriffinPlus/docker-zimbra.svg?branch=master)](https://travis-ci.org/GriffinPlus/docker-zimbra)
+[![Build Status](https://travis-ci.com/GriffinPlus/docker-zimbra.svg?branch=master)](https://travis-ci.com/GriffinPlus/docker-zimbra)
 [![Docker Pulls](https://img.shields.io/docker/pulls/griffinplus/zimbra.svg)](https://hub.docker.com/r/griffinplus/zimbra)
 [![Github Stars](https://img.shields.io/github/stars/griffinplus/docker-zimbra.svg?label=github%20%E2%98%85)](https://github.com/griffinplus/docker-zimbra)
 [![Github Stars](https://img.shields.io/github/contributors/griffinplus/docker-zimbra.svg)](https://github.com/griffinplus/docker-zimbra) 
