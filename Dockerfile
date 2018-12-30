@@ -8,7 +8,8 @@ RUN \
   apt-get -y update && \
   apt-get -y install \
     debootstrap \
-    iptables && \
+    iptables \
+    sed && \
   apt-get -y autoremove && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*

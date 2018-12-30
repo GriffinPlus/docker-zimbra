@@ -2,8 +2,8 @@
 
 set -e
 
-ZIMBRA_DOWNLOAD_URL="https://files.zimbra.com/downloads/8.8.11_GA/zcs-NETWORK-8.8.11_GA_3737.UBUNTU16_64.20181207111719.tgz"
-ZIMBRA_DOWNLOAD_HASH="c1446764fd2bee6ddd074976c26f029f395739735d42cf2eec380d16719e358f"
+ZIMBRA_DOWNLOAD_URL="https://files.zimbra.com/downloads/8.8.11_GA/zcs-8.8.11_GA_3737.UBUNTU16_64.20181207111719.tgz"
+ZIMBRA_DOWNLOAD_HASH="ba5f3470d8926267425d478a0b3ee7172d250cb46bc392df22798ab76cb9c143"
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
 # enable updating of /etc/resolv.conf when updating
@@ -34,7 +34,17 @@ apt-get -y install \
     net-tools \
     rsyslog \
     ssh \
+    sudo \
     wget
+
+# abort, if the shell is not attached to a terminal
+# (the menu-driven installation script requires user interaction)
+if [ ! -t 0 ]; then
+    echo "The executing shell is not attached to a terminal."
+    echo "Skipping installation of Zimbra as the menu-driven setup script requires user interaction."
+    echo "Please open a shell in the container and run /app/install-zimbra.sh manually..."
+    exit 0
+fi
 
 # download zimbra
 echo
@@ -127,5 +137,8 @@ sudo -u zimbra /opt/zimbra/bin/zmprov mcf +zimbraResponseHeader "Strict-Transpor
 echo
 echo "Configuring default COS to use selected persona in the Return-Path of the mail envelope (important for privacy)."
 sudo -u zimbra /opt/zimbra/bin/zmprov mc default zimbraSmtpRestrictEnvelopeFrom FALSE
+
+# let the container start Zimbra services next time
+rm -f /.dont_start_zimbra
 
 exit 0

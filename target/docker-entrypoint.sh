@@ -38,12 +38,13 @@ function setup_environment
         echo "Installing minimalistic Ubuntu 16.04 LTS (Xenial)..."
         debootstrap --variant=minbase --arch=amd64 xenial /data http://archive.ubuntu.com/ubuntu/
 
-        echo "Installing Zimbra..."
+        echo "Running Zimbra installation script (/app/install-zimbra.sh)..."
         mkdir -p $ZIMBRA_ENVIRONMENT_PATH/app
         cp /app/install-zimbra.sh $ZIMBRA_ENVIRONMENT_PATH/app/
         cp /app/update-letsencrypt.sh $ZIMBRA_ENVIRONMENT_PATH/app/
         chmod 750 $ZIMBRA_ENVIRONMENT_PATH/app/install-zimbra.sh
         chmod 750 $ZIMBRA_ENVIRONMENT_PATH/app/update-letsencrypt.sh
+        touch $ZIMBRA_ENVIRONMENT_PATH/.dont_start_zimbra
         prepare_chroot
         chroot $ZIMBRA_ENVIRONMENT_PATH /app/install-zimbra.sh # starts services at the end...
         chroot $ZIMBRA_ENVIRONMENT_PATH /app/update-letsencrypt.sh
@@ -60,7 +61,7 @@ function setup_environment
 # 80/tcp   - HTTP (for web mail clients)
 # 110/tcp  - POP3 (for mail clients)
 # 143/tcp  - IMAP (for mail clients)
-# 443/tcp  - HTTP over TLS (for web mail clients)
+# 443/tcp  - HTTPS (for web mail clients)
 # 465/tcp  - SMTP over SSL (for mail clients)
 # 587/tcp  - SMTP (submission, for mail clients)
 # 993/tcp  - IMAP over TLS (for mail clients)
@@ -74,6 +75,20 @@ FIREWALL_ALLOW_TCP_PORTS_IN=${FIREWALL_ALLOW_TCP_PORTS_IN:-25,80,110,143,443,465
 
 function configure_firewall
 {
+    # reset firewall rules for IPv4
+    iptables -t raw -F
+    iptables -t mangle -F
+    iptables -t nat -F
+    iptables -F
+    iptables -X
+
+    # reset firewall rules for IPv6
+    ip6tables -t raw -F
+    ip6tables -t mangle -F
+    ip6tables -t nat -F
+    ip6tables -F
+    ip6tables -X
+
     # filter all packets that have RH0 headers (deprecated, can be used for DoS attacks)
     ip6tables -t raw    -A PREROUTING  -m rt --rt-type 0 -j DROP
     ip6tables -t mangle -A POSTROUTING -m rt --rt-type 0 -j DROP
@@ -237,8 +252,13 @@ function handle_signal
 
 setup_signals "$1" "handle_signal" SIGINT SIGTERM SIGHUP
 
+# modify /etc/hosts to contain the external FQDN of the host
+if [ ! -z "${EXTERNAL_HOST_FQDN}" ]; then
+  cat /etc/hosts | sed -r "s/^($(hostname --ip-address))(\s+)(.*)$/\1\2$EXTERNAL_HOST_FQDN ${EXTERNAL_HOST_FQDN%%.*} \3/" > /etc/hosts
+fi
 
-# install Ubuntu + Zimbra into /data (if /data is empty)
+# install Ubuntu into /data (if /data is empty)
+# install Zimbra, if the shell is attached to a terminal
 setup_environment "$@"
 if [ $? -ne 0 ]; then exit $?; fi
 
@@ -304,4 +324,3 @@ fi
 if [ "$$" = "1" ]; then
     shutdown_chroot
 fi
-
