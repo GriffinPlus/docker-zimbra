@@ -47,7 +47,6 @@ function setup_environment
         touch $ZIMBRA_ENVIRONMENT_PATH/.dont_start_zimbra
         prepare_chroot
         chroot $ZIMBRA_ENVIRONMENT_PATH /app/install-zimbra.sh # starts services at the end...
-        chroot $ZIMBRA_ENVIRONMENT_PATH /app/update-letsencrypt.sh
         chroot $ZIMBRA_ENVIRONMENT_PATH /app/control-zimbra.sh stop
         shutdown_chroot
 
@@ -75,19 +74,11 @@ FIREWALL_ALLOW_TCP_PORTS_IN=${FIREWALL_ALLOW_TCP_PORTS_IN:-25,80,110,143,443,465
 
 function configure_firewall
 {
-    # reset firewall rules for IPv4
-    iptables -t raw -F
-    iptables -t mangle -F
-    iptables -t nat -F
-    iptables -F
-    iptables -X
-
-    # reset firewall rules for IPv6
-    ip6tables -t raw -F
-    ip6tables -t mangle -F
-    ip6tables -t nat -F
-    ip6tables -F
-    ip6tables -X
+    # proceed only, if the firewall is not already configured
+    # (the 'AllowICMP' chain is added below)
+    if [ `iptables -L AllowICMP > /dev/null 2>/dev/null` != "0" ]; then
+        return 0
+    fi
 
     # filter all packets that have RH0 headers (deprecated, can be used for DoS attacks)
     ip6tables -t raw    -A PREROUTING  -m rt --rt-type 0 -j DROP
