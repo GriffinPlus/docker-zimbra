@@ -235,9 +235,6 @@ function handle_signal
   case "$2" in
     SIGINT|SIGTERM)
       # echo "Shutting down Zimbra..."
-      if [ ! -z "$tls_cert_updater_pid" ]; then
-          echo "Shutting down TLS certificate updater..."
-      fi
       chroot $ZIMBRA_ENVIRONMENT_PATH /app/control-zimbra.sh stop
       running=0
       ;;
@@ -252,9 +249,6 @@ function start_zimbra
 {
     running=1
     chroot $ZIMBRA_ENVIRONMENT_PATH /app/control-zimbra.sh start
-    if [ ! -f "$ZIMBRA_ENVIRONMENT_PATH/.dont_start_zimbra" ]; then
-      # TODO
-    fi
 }
 
 function wait_for_signals
