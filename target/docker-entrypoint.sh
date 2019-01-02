@@ -17,7 +17,9 @@ function prepare_chroot
     mount -o bind /etc/hostname $ZIMBRA_ENVIRONMENT_PATH/etc/hostname
     mount -o bind /etc/resolv.conf $ZIMBRA_ENVIRONMENT_PATH/etc/resolv.conf
     cp /app/control-zimbra.sh $ZIMBRA_ENVIRONMENT_PATH/app/
+    cp /app/tls-cert-updater.py $ZIMBRA_ENVIRONMENT_PATH/app/
     chmod 750 $ZIMBRA_ENVIRONMENT_PATH/app/control-zimbra.sh
+    chmod 750 $ZIMBRA_ENVIRONMENT_PATH/app/tls-cert-updater.py
 }
 
 function shutdown_chroot
@@ -33,7 +35,9 @@ function shutdown_chroot
 
 function setup_environment
 {
-    if [ -z "$(ls -A $ZIMBRA_ENVIRONMENT_PATH)" ]; then
+    # install a fresh Ubuntu 16.04 LTS (xenial) linux, if the volume is still empty
+    # (may contain mounted TLS certificates, so classical emptiness check cannot be used...)
+    if [ ! -f "$ZIMBRA_ENVIRONMENT_PATH/etc/hosts" ]; then
 
         echo "Installing minimalistic Ubuntu 16.04 LTS (Xenial)..."
         debootstrap --variant=minbase --arch=amd64 xenial /data http://archive.ubuntu.com/ubuntu/
@@ -41,9 +45,7 @@ function setup_environment
         echo "Running Zimbra installation script (/app/install-zimbra.sh)..."
         mkdir -p $ZIMBRA_ENVIRONMENT_PATH/app
         cp /app/install-zimbra.sh $ZIMBRA_ENVIRONMENT_PATH/app/
-        cp /app/update-letsencrypt.sh $ZIMBRA_ENVIRONMENT_PATH/app/
         chmod 750 $ZIMBRA_ENVIRONMENT_PATH/app/install-zimbra.sh
-        chmod 750 $ZIMBRA_ENVIRONMENT_PATH/app/update-letsencrypt.sh
         touch $ZIMBRA_ENVIRONMENT_PATH/.dont_start_zimbra
         prepare_chroot
         chroot $ZIMBRA_ENVIRONMENT_PATH /app/install-zimbra.sh # starts services at the end...
@@ -74,9 +76,11 @@ FIREWALL_ALLOW_TCP_PORTS_IN=${FIREWALL_ALLOW_TCP_PORTS_IN:-25,80,110,143,443,465
 
 function configure_firewall
 {
+    return 0
+
     # proceed only, if the firewall is not already configured
     # (the 'AllowICMP' chain is added below)
-    if [ `iptables -L AllowICMP > /dev/null 2>/dev/null` != "0" ]; then
+    if [ `iptables -L AllowICMP > /dev/null 2>/dev/null; echo $?` != "0" ]; then
         return 0
     fi
 
@@ -231,6 +235,9 @@ function handle_signal
   case "$2" in
     SIGINT|SIGTERM)
       # echo "Shutting down Zimbra..."
+      if [ ! -z "$tls_cert_updater_pid" ]; then
+          echo "Shutting down TLS certificate updater..."
+      fi
       chroot $ZIMBRA_ENVIRONMENT_PATH /app/control-zimbra.sh stop
       running=0
       ;;
@@ -241,12 +248,33 @@ function handle_signal
   esac
 }
 
+function start_zimbra
+{
+    running=1
+    chroot $ZIMBRA_ENVIRONMENT_PATH /app/control-zimbra.sh start
+    if [ ! -f "$ZIMBRA_ENVIRONMENT_PATH/.dont_start_zimbra" ]; then
+      # TODO
+    fi
+}
+
+function wait_for_signals
+{
+    # wait for signals
+    echo "Waiting for signals..."
+    while [ $running -ne 0 ]; do
+        tail -f /dev/null & wait ${!}
+    done
+    echo "Stopped waiting for signals..."
+}
+
 setup_signals "$1" "handle_signal" SIGINT SIGTERM SIGHUP
+
 
 # modify /etc/hosts to contain the external FQDN of the host
 if [ ! -z "${EXTERNAL_HOST_FQDN}" ]; then
   cat /etc/hosts | sed -r "s/^($(hostname --ip-address))(\s+)(.*)$/\1\2$EXTERNAL_HOST_FQDN ${EXTERNAL_HOST_FQDN%%.*} \3/" > /etc/hosts
 fi
+
 
 # install Ubuntu into /data (if /data is empty)
 # install Zimbra, if the shell is attached to a terminal
@@ -264,43 +292,22 @@ fi
 if [ "$1" = 'run' ]; then
 
     # start Zimbra processes
-    running=1
-    chroot $ZIMBRA_ENVIRONMENT_PATH /app/control-zimbra.sh start
-
-    # wait for signals
-    # echo "Waiting for signals..."
-    while [ $running -ne 0 ]; do
-        tail -f /dev/null & wait ${!}
-    done
-    # echo "Stopped waiting for signals..."
+    start_zimbra
+    wait_for_signals
 
 elif [ "$1" = 'run-and-enter' ]; then
 
     # start Zimbra processes and a shell
-    running=1
-    chroot $ZIMBRA_ENVIRONMENT_PATH /app/control-zimbra.sh start
+    start_zimbra
     /bin/bash -c "/bin/bash && kill $$" 0<&0 1>&1 2>&2 &
-
-    # wait for signals
-    # echo "Waiting for signals..."
-    while [ $running -ne 0 ]; do
-        tail -f /dev/null & wait ${!}
-    done
-    # echo "Stopped waiting for signals..."
+    wait_for_signals
 
 elif [ "$1" = 'run-and-enter-zimbra' ]; then
 
-    # start Zimbra processes and a shell
-    running=1
-    chroot $ZIMBRA_ENVIRONMENT_PATH /app/control-zimbra.sh start
+    # start Zimbra processes and open a shell
+    start_zimbra
     chroot $ZIMBRA_ENVIRONMENT_PATH /bin/bash -c "/bin/bash && kill $$" 0<&0 1>&1 2>&2 &
-
-    # wait for signals
-    # echo "Waiting for signals..."
-    while [ $running -ne 0 ]; do
-        tail -f /dev/null & wait ${!}
-    done
-    # echo "Stopped waiting for signals..."
+    wait_for_signals
 
 elif [ $# -gt 0 ]; then
 
@@ -311,7 +318,7 @@ elif [ $# -gt 0 ]; then
 fi
 
 
-# shut chroot down
+# shut chroot down, if primary process (PID 1) is shutting down
 if [ "$$" = "1" ]; then
     shutdown_chroot
 fi
