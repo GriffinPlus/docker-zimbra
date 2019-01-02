@@ -10,10 +10,12 @@ case "$1" in
         if [ ! -f "/.dont_start_zimbra" ]; then
             /etc/init.d/zimbra start
             sudo -u zimbra -- /opt/zimbra/bin/zmauditswatchctl start
+            /app/tls-cert-updater.py > /var/log/tls-cert-updater.py &
         fi
         ;;
     stop)
         if [ ! -f "/.dont_start_zimbra" ]; then
+            killall tls-cert-updater.py
             sudo -u zimbra -- /opt/zimbra/bin/zmauditswatchctl stop
             /etc/init.d/zimbra stop
         fi
