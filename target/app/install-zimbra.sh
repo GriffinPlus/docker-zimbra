@@ -6,42 +6,11 @@ ZIMBRA_DOWNLOAD_URL="https://files.zimbra.com/downloads/8.8.11_GA/zcs-8.8.11_GA_
 ZIMBRA_DOWNLOAD_HASH="ba5f3470d8926267425d478a0b3ee7172d250cb46bc392df22798ab76cb9c143"
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
-# enable updating of /etc/resolv.conf when updating
-echo "resolvconf resolvconf/linkify-resolvconf boolean false" | debconf-set-selections
-
-echo
-echo "Updating environment..."
-apt-get -y update
-apt-get -y install software-properties-common
-add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial          main restricted universe"
-add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial-updates  main restricted universe"
-add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial-security main restricted universe"
-add-apt-repository --yes "ppa:certbot/certbot"
-apt-get -y update
-apt-get -y dist-upgrade
-
-echo
-echo "Installing prerequisites..."
-apt-get -y install \
-    apticron \
-    certbot \
-    coreutils \
-    cron \
-    iptables \
-    logrotate \
-    lsb-release \
-    nano \
-    net-tools \
-    rsyslog \
-    ssh \
-    sudo \
-    wget
-
 # abort, if the shell is not attached to a terminal
 # (the menu-driven installation script requires user interaction)
 if [ ! -t 0 ]; then
     echo "The executing shell is not attached to a terminal."
-    echo "Skipping installation of Zimbra as the menu-driven setup script requires user interaction."
+    echo "Aborting installation of Zimbra as the menu-driven setup script requires user interaction."
     echo "Please open a shell in the container and run /app/install-zimbra.sh manually..."
     exit 0
 fi
@@ -69,9 +38,9 @@ cd zcs
 ./install.sh
 
 echo
+echo "Retrieving some information needed for further steps..."
 ADMIN_EMAIL=`sudo -u zimbra /opt/zimbra/bin/zmlocalconfig smtp_destination | cut -d ' ' -f3`
-echo "Configuring apticron to send update notifications to $ADMIN_EMAIL..."
-echo "EMAIL=\"$ADMIN_EMAIL\"" >> /etc/apticron/apticron.conf
+echo "- Admin e-mail address: $ADMIN_EMAIL"
 
 echo
 echo "Configuring Zimbra's brute-force detector (auditswatch) to send notifications to $ADMIN_EMAIL..."
@@ -115,10 +84,6 @@ echo "Adding Zimbra's Perl include path to search path..."
 echo 'PERL5LIB="/opt/zimbra/common/lib/perl5"' >> /etc/environment
 
 echo
-echo "Scheduling running Certbot daily..."
-echo "0 0 * * * root /app/update-letsencrypt.sh >/dev/null 2>&1" > /etc/cron.d/certbot
-
-echo
 echo "Generating stronger DH parameters (4096 bit)..."
 sudo -u zimbra /opt/zimbra/bin/zmdhparam set -new 4096
 
@@ -130,9 +95,9 @@ sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdTlsProtocols '!SSLv2,!SS
 sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdTlsMandatoryCiphers high
 sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdTlsExcludeCiphers 'aNULL,MD5,DES'
 
-echo
-echo "Enabling HTTP Strict Transport Security (HSTS)..."
-sudo -u zimbra /opt/zimbra/bin/zmprov mcf +zimbraResponseHeader "Strict-Transport-Security: max-age=31536000"
+# echo
+# echo "Enabling HTTP Strict Transport Security (HSTS)..."
+# sudo -u zimbra /opt/zimbra/bin/zmprov mcf +zimbraResponseHeader "Strict-Transport-Security: max-age=31536000"
 
 echo
 echo "Configuring default COS to use selected persona in the Return-Path of the mail envelope (important for privacy)."
@@ -140,5 +105,11 @@ sudo -u zimbra /opt/zimbra/bin/zmprov mc default zimbraSmtpRestrictEnvelopeFrom 
 
 # let the container start Zimbra services next time
 rm -f /.dont_start_zimbra
+
+# restart services
+echo
+echo "Restarting services..."
+sudo -u zimbra /opt/zimbra/bin/zmcontrol stop
+/app/control-zimbra.sh start
 
 exit 0

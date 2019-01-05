@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import signal
 import os
@@ -410,6 +410,11 @@ while not interrupted:
         log_error("Unexpected error: {0}".format(sys.exc_info()[0]))
         pass
 
+    # run only this turn, if requested
+    if len(sys.argv) >= 2 and sys.argv[1] == 'once':
+        interrupted = True
+
     # wait some time and try again...
-    time.sleep(3)
+    if not interrupted:
+        time.sleep(10)
 

@@ -8,6 +8,7 @@ RUN \
   apt-get -y update && \
   apt-get -y install \
     debootstrap \
+    dnsmasq \
     iptables \
     sed && \
   apt-get -y autoremove && \

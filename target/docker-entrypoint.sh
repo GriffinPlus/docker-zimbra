@@ -3,6 +3,7 @@
 set -e
 
 ZIMBRA_ENVIRONMENT_PATH="/data"
+CONTAINER_IP=$(hostname --ip-address)
 
 function prepare_chroot
 {
@@ -19,7 +20,7 @@ function prepare_chroot
     cp /app/control-zimbra.sh $ZIMBRA_ENVIRONMENT_PATH/app/
     cp /app/tls-cert-updater.py $ZIMBRA_ENVIRONMENT_PATH/app/
     chmod 750 $ZIMBRA_ENVIRONMENT_PATH/app/control-zimbra.sh
-    chmod 750 $ZIMBRA_ENVIRONMENT_PATH/app/tls-cert-updater.py
+    chmod 755 $ZIMBRA_ENVIRONMENT_PATH/app/tls-cert-updater.py
 }
 
 function shutdown_chroot
@@ -44,12 +45,19 @@ function setup_environment
 
         echo "Running Zimbra installation script (/app/install-zimbra.sh)..."
         mkdir -p $ZIMBRA_ENVIRONMENT_PATH/app
+        mkdir -p $ZIMBRA_ENVIRONMENT_PATH/app/resources
+        cp /app/setup-environment.sh $ZIMBRA_ENVIRONMENT_PATH/app/
         cp /app/install-zimbra.sh $ZIMBRA_ENVIRONMENT_PATH/app/
+        cp /app/resources/50unattended-upgrades $ZIMBRA_ENVIRONMENT_PATH/app/resources/
+        chmod 750 $ZIMBRA_ENVIRONMENT_PATH/app/setup-environment.sh
         chmod 750 $ZIMBRA_ENVIRONMENT_PATH/app/install-zimbra.sh
+        chmod 644 $ZIMBRA_ENVIRONMENT_PATH/app/resources/50unattended-upgrades
         touch $ZIMBRA_ENVIRONMENT_PATH/.dont_start_zimbra
         prepare_chroot
+        chroot $ZIMBRA_ENVIRONMENT_PATH /app/setup-environment.sh
         chroot $ZIMBRA_ENVIRONMENT_PATH /app/install-zimbra.sh # starts services at the end...
         chroot $ZIMBRA_ENVIRONMENT_PATH /app/control-zimbra.sh stop
+        rm $ZIMBRA_ENVIRONMENT_PATH/app/setup-environment.sh
         shutdown_chroot
 
     fi
@@ -76,8 +84,6 @@ FIREWALL_ALLOW_TCP_PORTS_IN=${FIREWALL_ALLOW_TCP_PORTS_IN:-25,80,110,143,443,465
 
 function configure_firewall
 {
-    return 0
-
     # proceed only, if the firewall is not already configured
     # (the 'AllowICMP' chain is added below)
     if [ `iptables -L AllowICMP > /dev/null 2>/dev/null; echo $?` != "0" ]; then
@@ -264,11 +270,26 @@ function wait_for_signals
 setup_signals "$1" "handle_signal" SIGINT SIGTERM SIGHUP
 
 
-# modify /etc/hosts to contain the external FQDN of the host
-if [ ! -z "${EXTERNAL_HOST_FQDN}" ]; then
-  cat /etc/hosts | sed -r "s/^($(hostname --ip-address))(\s+)(.*)$/\1\2$EXTERNAL_HOST_FQDN ${EXTERNAL_HOST_FQDN%%.*} \3/" > /etc/hosts
-fi
+# configure split-horizon DNS for Zimbra
+if [ "$$" = "1" ]; then
 
+    # modify /etc/hosts to contain the external FQDN of the host
+    if [ ! -z "${EXTERNAL_HOST_FQDN}" ]; then
+        cat /etc/hosts | sed -r "s/^($(hostname --ip-address))(\s+)(.*)$/\1\2$EXTERNAL_HOST_FQDN ${EXTERNAL_HOST_FQDN%%.*} \3/" > /etc/hosts
+    fi
+
+    # configure dnsmasq
+    cat > /etc/dnsmasq.conf <<EOL
+server=$CONTAINER_IP
+listen-address=127.0.0.1
+mx-host=$EXTERNAL_HOST_FQDN, $EXTERNAL_HOST_FQDN, 0
+EOL
+    /etc/init.d/dnsmasq start
+
+    # modify /etc/resolv.conf to use dnsmasq
+    cat /etc/resolv.conf  | sed "s/nameserver .*/nameserver 127.0.0.1/" > /etc/resolv.conf
+
+fi
 
 # install Ubuntu into /data (if /data is empty)
 # install Zimbra, if the shell is attached to a terminal
