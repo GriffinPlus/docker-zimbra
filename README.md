@@ -8,11 +8,11 @@
 
 ## Overview
 
-This image contains everything needed to download, setup and run the [Zimbra](https://www.zimbra.com/) colaboration suite. The image itself does not contain Zimbra. On the first start, the container installs a minimalistic Ubuntu 16.04 LTS onto a docker volume. This installation serves as the root filesystem for Zimbra, so Zimbra can work with the environment and everything is kept consistent and persistent - even if the container is updated. This also implys that you must take care of updating the Ubuntu installation and Zimbra regularly. Pulling a new image version **does not** automatically update the Ubuntu installation on the docker volume.
+This image contains everything needed to download, setup and run the [Zimbra](https://www.zimbra.com/) colaboration suite. The image itself does not contain Zimbra. On the first start, the container installs a minimalistic Ubuntu 16.04 LTS onto a docker volume. This installation serves as the root filesystem for Zimbra, so Zimbra can work with the environment and everything is kept consistent and persistent - even if the container is updated. This also implys that you must take care of updating the Ubuntu installation and Zimbra regularly. Pulling a new image version **does not** automatically update the Ubuntu installation on the docker volume. To reduce the chance of security issues, Ubuntu's *unattended upgrades* system installs updates automatically. 
+
+The container supports IPv6 with a global IPv6 address and configures packet filtering to block common attacks and access to non-public ports.
 
 ## Usage
-
-The container needs your docker host to have IPv6 up and running. A global IPv6 address is needed as well. Please see [here](https://docs.docker.com/engine/userguide/networking/default_network/ipv6/) for details on how to enable IPv6 support.
 
 ### Step 1 - Configuring a User-Defined Network
 
@@ -104,7 +104,7 @@ docker run --name zimbra \
 
 ## Maintenance
 
-The container installs a complete Ubuntu 16.04 LTS installation plus Zimbra onto the attached volume, if the volume is empty. This also means that running an updated docker image does not automatically update the installation on the volume. This must be done manually. You can get a shell in the container using the following command:
+The container installs a complete Ubuntu 16.04 LTS installation plus Zimbra onto the attached volume, if the volume is empty. This also means that running an updated docker image does not automatically update the installation on the volume. Nevertheless the installation is kept up-to-date as Ubuntu's *unattended upgrades* care for official updates. If you do not want the installation to be updated automatically, you can simply disable unattended upgrades after the installation and install updates manually. You can get a shell in the container using the following command:
 
 ```
 docker exec -it zimbra /bin/bash
@@ -131,14 +131,22 @@ If a new Zimbra installation is available, you have to update it manually to ens
 
 ### Transport Security (TLS)
 
-The container fetches free certificates from the *Let's Encrypt CA* and configures Zimbra to use them appropriately. At the moment only 2048 bit RSA certificates are supported. It supports cipher suites providing a reasonable level of security without sacrificing compatibility and speed only. Furthermore 4096 bit DH parameters are generated improving the security level of the key exchange. As long as Zimbra's proxy is enabled - which should always be the case - HTTP Transport Security (HSTS) is enabled to tell web browsers to connect to Zimbra over HTTPS only.
+Zimbra generates a self-signed certificate used for TLS, but as self-signed certificates are not trusted web browsers will complain about it. To use a certificate issued by a trusted certification authority (CA), you can tell the container to set it in by providing the private key at `/data/app/tls/zimbra.key` and the certificate at `/data/app/tls/zimbra.crt`. The certificate *should* contain the certificate chain up to the root certificate. If a certificate of an intermediate CA or root CA is missing, the container will try to download the missing certificates using the *Authority Information Access* extension (if available).
+
+Furthermore 4096 bit DH parameters are generated improving the security level of the key exchange.
+
+#### HTTP Transport Security (HSTS)
+
+If the container is *directly* connected to the internet (without a reverse proxy in between), HTTP Transport Security (HSTS) should be enabled to tell web browsers to connect to Zimbra over HTTPS only. This can be done as follows:
+
+```
+sudo -u zimbra -- /opt/zimbra/bin/zmprov mcf +zimbraResponseHeader "Strict-Transport-Security: max-age=31536000"
+```
 
 The configuration passes the popular SSL/TLS server tests:
 - [SSL Labs](https://www.ssllabs.com/ssltest/) (supports HTTPS only)
 - [Online Domain Tools](http://ssl-checker.online-domain-tools.com/) (supports HTTPS, SMTP, IMAP, POP)
 - [High-Tech-Bridge](https://www.htbridge.com/ssl/) (supports HTTPS, SMTP, IMAP, POP)
-
-Feel free to check your installation by yourself and open an issue, if there should be something wrong with the configuration. I will try to fix it as soon as possible.
 
 ### Firewall
 
@@ -159,7 +167,7 @@ The container configures the firewall allowing only the following services to be
 | 5223/tcp | XMPP (default legacy port)              |
 | 7071/tcp | HTTPS (admin panel)                     |
 
-Access to backend services, e.g. LDAP, MariaDB or the Jetty server, is blocked by the packet filter. Access to webmail or the admin panel via HTTP(S) as well as mail access via POP(S) and IMAP(S) are proxied by NGINX shipped with Zimbra adding an extra layer of security. If you keep the default settings when installing Zimbra using this image, inter-process communication will configured to work without encryption to speed up operation. This is not an issue as everything is running on the same host, even within the same container.
+Access to backend services, e.g. LDAP, MariaDB or the Jetty server, is blocked by the packet filter. Access to webmail via HTTP(S) as well as mail access via POP(S) and IMAP(S) are proxied by NGINX shipped with Zimbra adding an extra layer of security. If you keep the default settings when installing Zimbra using this image, secure inter-process communication will be enabled. You can disable this feature. It will speed up the overall system performance as Zimbra components communicate without encryption. This is not an issue as everything is running on the same host, even within the same container.
 
 Furthermore the packet filter comes with a couple of rules protecting against common threats:
 - TCP floods (except SYN floods)
