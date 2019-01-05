@@ -8,7 +8,7 @@
 
 ## Overview
 
-This image contains everything needed to download, setup and run the [Zimbra](https://www.zimbra.com/) colaboration suite. The image itself does not contain Zimbra. On the first start, the container installs a minimalistic Ubuntu 16.04 LTS onto a docker volume. This installation serves as the root filesystem for Zimbra, so Zimbra can work with the environment and everything is kept consistent and persistent - even if the container is updated. This also implys that you must take care of updating the Ubuntu installation and Zimbra regularly. Pulling a new image version **does not** automatically update the Ubuntu installation on the docker volume. To reduce the chance of security issues, Ubuntu's *unattended upgrades* system installs updates automatically. 
+This image contains everything needed to download, setup and run the [Zimbra](https://www.zimbra.com/) colaboration suite. The image itself does not contain Zimbra. On the first start, the container installs a minimalistic Ubuntu 16.04 LTS onto a docker volume. This installation serves as the root filesystem for Zimbra, so Zimbra can work with the environment and everything is kept consistent and persistent - even if the container is updated. This also implys that pulling a new image version **does not** automatically update the Ubuntu installation on the docker volume. To reduce the chance of security issues, the container configures Ubuntu's *unattended upgrades* package to install official updates automatically. 
 
 The container supports IPv6 with a global IPv6 address and configures packet filtering to block common attacks and access to non-public ports.
 
@@ -104,7 +104,9 @@ docker run --name zimbra \
 
 ## Maintenance
 
-The container installs a complete Ubuntu 16.04 LTS installation plus Zimbra onto the attached volume, if the volume is empty. This also means that running an updated docker image does not automatically update the installation on the volume. Nevertheless the installation is kept up-to-date as Ubuntu's *unattended upgrades* care for official updates. If you do not want the installation to be updated automatically, you can simply disable unattended upgrades after the installation and install updates manually. You can get a shell in the container using the following command:
+The container installs a complete Ubuntu 16.04 LTS installation plus Zimbra onto the attached volume, if the volume is empty. This also means that running an updated docker image does not automatically update the installation on the volume. Nevertheless the installation is kept up-to-date as Ubuntu's *unattended upgrades* package installs official updates automatically. If you do not want the installation to be updated automatically, you can simply disable unattended upgrades by setting `APT::Periodic::Unattended-Upgrade "0";` in `/etc/apt/apt.conf.d/20auto-upgrades` after the installation has finished.
+
+To install updates manually, you need to get a shell in the container using the following command:
 
 ```
 docker exec -it zimbra /bin/bash
@@ -131,7 +133,7 @@ If a new Zimbra installation is available, you have to update it manually to ens
 
 ### Transport Security (TLS)
 
-Zimbra generates a self-signed certificate used for TLS, but as self-signed certificates are not trusted web browsers will complain about it. To use a certificate issued by a trusted certification authority (CA), you can tell the container to set it in by providing the private key at `/data/app/tls/zimbra.key` and the certificate at `/data/app/tls/zimbra.crt`. The certificate *should* contain the certificate chain up to the root certificate. If a certificate of an intermediate CA or root CA is missing, the container will try to download the missing certificates using the *Authority Information Access* extension (if available).
+By default Zimbra generates a self-signed certificate for TLS. As self-signed certificates are not trusted web browsers will complain about it. To use a certificate issued by a trusted certification authority (CA), you can tell the container to set it in by providing the private key at `/data/app/tls/zimbra.key` and the certificate at `/data/app/tls/zimbra.crt`. The container keeps track of changes to the certificate file and re-configures Zimbra, if necessary. Therefore it is recommended to mount a volume with the key and the certificate at `/data/app/tls` and use it for exchanging the certificate. The certificate *should* contain the certificate chain up to the root certificate. If a certificate of an intermediate CA or root CA is missing, the container will try to download the missing certificates using the *Authority Information Access* extension (if available).
 
 Furthermore 4096 bit DH parameters are generated improving the security level of the key exchange.
 
