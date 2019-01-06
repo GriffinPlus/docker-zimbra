@@ -95,13 +95,14 @@ sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdTlsProtocols '!SSLv2,!SS
 sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdTlsMandatoryCiphers high
 sudo -u zimbra /opt/zimbra/bin/zmprov mcf zimbraMtaSmtpdTlsExcludeCiphers 'aNULL,MD5,DES'
 
-# echo
-# echo "Enabling HTTP Strict Transport Security (HSTS)..."
-# sudo -u zimbra /opt/zimbra/bin/zmprov mcf +zimbraResponseHeader "Strict-Transport-Security: max-age=31536000"
-
 echo
 echo "Configuring default COS to use selected persona in the Return-Path of the mail envelope (important for privacy)."
 sudo -u zimbra /opt/zimbra/bin/zmprov mc default zimbraSmtpRestrictEnvelopeFrom FALSE
+
+echo
+echo "Installing mail utilities to enable unattended-upgrades to send notifications."
+echo "(Can be done after installing Zimbra only as bsd-mailx pulls in postfix that conflicts with the postfix package deployed by Zimbra.)"
+apt-get install -y bsd-mailx
 
 # let the container start Zimbra services next time
 rm -f /.dont_start_zimbra
