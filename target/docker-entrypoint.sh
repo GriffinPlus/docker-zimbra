@@ -287,7 +287,10 @@ EOL
     /etc/init.d/dnsmasq start
 
     # modify /etc/resolv.conf to use dnsmasq
-    cat /etc/resolv.conf  | sed "s/nameserver .*/nameserver 127.0.0.1/" > /etc/resolv.conf
+    RESOLV_CONF_TEMP_PATH=`mktemp`
+    cat /etc/resolv.conf | sed "s/nameserver .*/nameserver 127.0.0.1/" > $RESOLV_CONF_TEMP_PATH
+    cp -f "$RESOLV_CONF_TEMP_PATH" /etc/resolv.conf
+    rm -f "$RESOLV_CONF_TEMP_PATH"
 
 fi
 
