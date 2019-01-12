@@ -177,7 +177,61 @@ Furthermore the packet filter comes with a couple of rules protecting against co
 - RH0 packets (can be used for DoS attacks)
 - Ping of Death
 
-### Brute Force Detection
+### Mitigating Denial of Service (DoS) Attacks
+
+#### HTTP Request Rate Limiting
+
+Zimbra provides a simple mechanism to mitigate DoS attacks by rate-limiting HTTP requests per IP address.
+
+At first the `zimbraHttpDosFilterDelayMillis` setting determines how to handle requests exceeding the rate-limit.
+`-1` simply rejects the request (default). Any other positive value applys a delay (in ms) to the request to throttle it down. The setting can be configured as follows:
+
+```
+sudo -u zimbra -- zmprov mcf zimbraHttpDosFilterDelayMillis -1
+```
+
+The `zimbraHttpDosFilterMaxRequestsPerSec` setting determines the maximum number of requests that are allowed per second. The default value is `30`. The setting can be configured as follows:
+
+```
+sudo -u zimbra -- zmprov mcf zimbraHttpDosFilterMaxRequestsPerSec 30
+```
+
+At last the `zimbraHttpThrottleSafeIPs` setting determines IP addresses or IP address ranges (in CIDR notation) that should not be throttled. By default the whitelist is empty, but loopback adresses are always whitelisted. The setting can be configured as follows:
+
+```
+sudo -u zimbra -- zmprov mcf zimbraHttpThrottleSafeIPs 10.1.2.3/32 zimbraHttpThrottleSafeIPs 192.168.4.0/24
+```
+
+Alternatively you can add values to an existing list:
+
+```
+sudo -u zimbra -- zmprov mcf +zimbraHttpThrottleSafeIPs 10.1.2.3/32
+sudo -u zimbra -- zmprov mcf +zimbraHttpThrottleSafeIPs 192.168.4.0/24
+```
+
+### Mitigating Brute Force Attacks
+
+Zimbra comes with a mechanism that blocks IP addresses, if there are too many failed login attempts coming from the address. The default values are usually a good starting point, but depending on the deployment it might be useful to adjust the settings.
+
+At first the `zimbraInvalidLoginFilterDelayInMinBetwnReqBeforeReinstating` setting determines the time (in minutes) to block an IP address that has caused too many login attempts. The default value is `15`. The setting can be adjusted as follows:
+
+```
+sudo -u zimbra -- zmprov mcf zimbraInvalidLoginFilterDelayInMinBetwnReqBeforeReinstating 15
+```
+
+The setting `zimbraInvalidLoginFilterMaxFailedLogin` determines the number of failed login attempts before an IP address gets blocked. The default value is `10`. It can be adjusted as follows:
+
+```
+sudo -u zimbra -- zmprov mcf zimbraInvalidLoginFilterMaxFailedLogin 10
+```
+
+At last the setting `zimbraInvalidLoginFilterReinstateIpTaskIntervalInMin` determines the interval (in minutes) betwen running the process to unblock IP addresses. The default value is `5`. Usually there is no need to tweak it, but it can be adjusted as follows:
+
+```
+sudo -u zimbra -- zmprov mcf zimbraInvalidLoginFilterReinstateIpTaskIntervalInMin 5
+```
+
+### Monitoring Authentication Activity
 
 The container configures Zimbra's brute-force detection *zmauditswatch*. It monitors authentication activity and sends an email to a configured recipient notifying the recipient of a possible attack. The default recipient is the administrator (as returned by `zmlocalconfig smtp_destination`). It does not block the attack!
 
