@@ -3,7 +3,10 @@
 set -e
 
 ZIMBRA_ENVIRONMENT_PATH="/data"
-CONTAINER_IP=$(hostname --ip-address)
+HOSTNAME=$(hostname -a)
+DOMAIN=$(hostname -d)
+# CONTAINER_IP=$(hostname --ip-address)
+CONTAINER_IP=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/')
 
 function prepare_chroot
 {
@@ -275,15 +278,46 @@ if [ "$$" = "1" ]; then
 
     # modify /etc/hosts to contain the external FQDN of the host
     if [ ! -z "${EXTERNAL_HOST_FQDN}" ]; then
-        cat /etc/hosts | sed -r "s/^($(hostname --ip-address))(\s+)(.*)$/\1\2$EXTERNAL_HOST_FQDN ${EXTERNAL_HOST_FQDN%%.*} \3/" > /etc/hosts
+        HOSTS_TEMP_PATH=`mktemp`
+        cat /etc/hosts | sed -r "s/^($(hostname --ip-address))(\s+)(.*)$/\1\2$EXTERNAL_HOST_FQDN ${EXTERNAL_HOST_FQDN%%.*} \3/" > $HOSTS_TEMP_PATH
+        cp -f "$HOSTS_TEMP_PATH" /etc/hosts
+        rm -f "$HOSTS_TEMP_PATH"
+    fi
+
+    # retrieve regular DNS server
+    DNS_SERVER=`cat /etc/resolv.conf | sed -rn "s/^nameserver\s+([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\s*$/\1/p"`
+    if [ "$DNS_SERVER" != "127.0.0.1" ]; then
+        echo "$DNS_SERVER" > /etc/nameserver.org
+    else
+        if [ -f /etc/nameserver.org ]; then
+            DNS_SERVER=`cat /etc/nameserver.org`
+        else
+            echo "Setting up split-horizon DNS failed. It seems to have been configured previously, but /etc/nameserver.org is missing now!"
+            exit 1
+        fi
     fi
 
     # configure dnsmasq
-    cat > /etc/dnsmasq.conf <<EOL
-server=$CONTAINER_IP
-listen-address=127.0.0.1
-mx-host=$EXTERNAL_HOST_FQDN, $EXTERNAL_HOST_FQDN, 0
-EOL
+    [[ -z "${MAIL_DOMAINS}" ]] && MAIL_DOMAINS=`echo "$EXTERNAL_HOST_FQDN" | cut -d '.' -f 2-`
+    echo "server=$DNS_SERVER" > /etc/dnsmasq.conf
+    echo "listen-address=127.0.0.1" >> /etc/dnsmasq.conf
+    if [ -z "${EXTERNAL_HOST_FQDN}" ]; then
+        echo "domain=$DOMAIN" >> /etc/dnsmasq.conf
+        echo "address=/$HOSTNAME.$DOMAIN/$CONTAINER_IP" >> /etc/dnsmasq.conf
+        echo "mx-host=$DOMAIN,$HOSTNAME.$DOMAIN,0" >> /etc/dnsmasq.conf
+        for domain in ${ADDITIONAL_MAIL_DOMAINS//,/ }; do
+            echo "mx-host=$domain,$HOSTNAME.$DOMAIN,0" >> /etc/dnsmasq.conf
+        done
+    else
+        EXT_HOSTNAME=`echo "$EXTERNAL_HOST_FQDN" | cut -d '.' -f 1`
+        EXT_DOMAIN=`echo "$EXTERNAL_HOST_FQDN" | cut -d '.' -f 2-`
+        echo "domain=$EXT_DOMAIN" >> /etc/dnsmasq.conf
+        echo "address=/$EXT_HOSTNAME.$EXT_DOMAIN/$CONTAINER_IP" >> /etc/dnsmasq.conf
+        echo "mx-host=$EXT_DOMAIN,$EXT_HOSTNAME.$EXT_DOMAIN,0" >> /etc/dnsmasq.conf
+        for domain in ${ADDITIONAL_MAIL_DOMAINS//,/ }; do
+            echo "mx-host=$domain,$EXT_HOSTNAME.$EXT_DOMAIN,0" >> /etc/dnsmasq.conf
+        done
+    fi
     /etc/init.d/dnsmasq start
 
     # modify /etc/resolv.conf to use dnsmasq

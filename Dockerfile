@@ -9,6 +9,7 @@ RUN \
   apt-get -y install \
     debootstrap \
     dnsmasq \
+    iproute2 \
     iptables \
     sed && \
   apt-get -y autoremove && \
