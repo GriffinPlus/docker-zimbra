@@ -2,8 +2,8 @@
 
 set -e
 
-ZIMBRA_DOWNLOAD_URL="https://files.zimbra.com/downloads/8.8.11_GA/zcs-8.8.11_GA_3737.UBUNTU16_64.20181207111719.tgz"
-ZIMBRA_DOWNLOAD_HASH="ba5f3470d8926267425d478a0b3ee7172d250cb46bc392df22798ab76cb9c143"
+ZIMBRA_DOWNLOAD_URL="https://files.zimbra.com/downloads/8.8.12_GA/zcs-8.8.12_GA_3794.UBUNTU16_64.20190329045002.tgz"
+ZIMBRA_DOWNLOAD_HASH="e43dc2173f6ef490bcea01abaa28acffc52ffe18123aaf35b48bce9e13226d05"
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
 # abort, if the shell is not attached to a terminal
