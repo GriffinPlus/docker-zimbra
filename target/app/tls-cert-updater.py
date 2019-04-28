@@ -2,6 +2,7 @@
 
 import signal
 import os
+import shutil
 import pem
 import urllib.request
 import sys
@@ -343,7 +344,7 @@ def configure_zimbra(server_key, server_certificate, ca_certificate_chain):
         os.chown(temp_dir_path, user.pw_uid, user.pw_gid)
 
         # configure zimbra to use the certificate
-        os.replace(private_key_path, ZIMBRA_PRIVATE_KEY_PATH)
+        shutil.copy2(private_key_path, ZIMBRA_PRIVATE_KEY_PATH)
         call( [ "sudo", "-u", "zimbra", "/opt/zimbra/bin/zmcertmgr", "deploycrt", "comm", server_certificate_path, certificate_chain_path ] )
         call( [ "sudo", "-u", "zimbra", "/opt/zimbra/bin/zmcontrol", "restart" ] )
 
