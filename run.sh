@@ -8,7 +8,7 @@ IPV6="2001:xxxx:yyyy:zzzz::2"       # ipv6 of container (directly accessable fro
 NETWORK="frontend"                  # name of the network the container will be connected to
 HOSTNAME="zimbra.my-domain.com"     # FQDN of container (as specified in the DNS)
 
-# create a named volume that will store a complete Ubuntu 16.04 LTS and Zimbra
+# create a named volume that will store a complete Ubuntu 18.04 LTS and Zimbra
 docker volume create zimbra-data
 
 # run the container

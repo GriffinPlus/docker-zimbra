@@ -11,9 +11,9 @@ echo
 echo "Updating environment..."
 apt-get -y update
 apt-get -y install software-properties-common
-add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial          main restricted universe"
-add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial-updates  main restricted universe"
-add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu xenial-security main restricted universe"
+add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu bionic          main restricted universe"
+add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu bionic-updates  main restricted universe"
+add-apt-repository --yes "deb http://archive.ubuntu.com/ubuntu bionic-security main restricted universe"
 apt-get -y update
 apt-get -y dist-upgrade
 apt-get -y autoremove
