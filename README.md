@@ -1,4 +1,4 @@
-# Docker Image with Zimbra 8.8.12 GA (FOSS Edition)
+# Docker Image with Zimbra 8.8.15 GA (FOSS Edition)
 
 [![Build Status](https://travis-ci.com/GriffinPlus/docker-zimbra.svg?branch=master)](https://travis-ci.com/GriffinPlus/docker-zimbra)
 [![Docker Pulls](https://img.shields.io/docker/pulls/griffinplus/zimbra.svg)](https://hub.docker.com/r/griffinplus/zimbra)
@@ -8,7 +8,7 @@
 
 ## Overview
 
-This image contains everything needed to download, setup and run the [Zimbra](https://www.zimbra.com/) colaboration suite. The image itself does not contain Zimbra. On the first start, the container installs a minimalistic Ubuntu 16.04 LTS onto a docker volume. This installation serves as the root filesystem for Zimbra, so Zimbra can work with the environment and everything is kept consistent and persistent - even if the container is updated. This also implys that pulling a new image version **does not** automatically update the Ubuntu installation on the docker volume. To reduce the chance of security issues, the container configures Ubuntu's *unattended upgrades* package to install official updates automatically. 
+This image contains everything needed to download, setup and run the [Zimbra](https://www.zimbra.com/) colaboration suite. The image itself does not contain Zimbra. On the first start, the container installs a minimalistic Ubuntu 18.04 LTS onto a docker volume. This installation serves as the root filesystem for Zimbra, so Zimbra can work with the environment and everything is kept consistent and persistent - even if the container is updated. This also implys that pulling a new image version **does not** automatically update the Ubuntu installation on the docker volume. To reduce the chance of security issues, the container configures Ubuntu's *unattended upgrades* package to install official updates automatically. 
 
 The container supports IPv6 with a global IPv6 address and configures packet filtering to block common attacks and access to non-public ports.
 
@@ -18,7 +18,7 @@ Usage scenarios on how to deploy the Zimbra container on a *Docker* host or on *
 
 ## Maintenance
 
-The container installs a complete Ubuntu 16.04 LTS installation plus Zimbra onto the attached volume, if the volume is empty. This also means that running an updated docker image does not automatically update the installation on the volume. Nevertheless the installation is kept up-to-date as Ubuntu's *unattended upgrades* package installs official updates automatically. If you do not want the installation to be updated automatically, you can simply disable unattended upgrades by setting `APT::Periodic::Unattended-Upgrade "0";` in `/etc/apt/apt.conf.d/20auto-upgrades` after the installation has finished.
+The container installs a complete Ubuntu 18.04 LTS installation plus Zimbra onto the attached volume, if the volume is empty. This also means that running an updated docker image does not automatically update the installation on the volume. Nevertheless the installation is kept up-to-date as Ubuntu's *unattended upgrades* package installs official updates automatically. If you do not want the installation to be updated automatically, you can simply disable unattended upgrades by setting `APT::Periodic::Unattended-Upgrade "0";` in `/etc/apt/apt.conf.d/20auto-upgrades` after the installation has finished.
 
 To install updates manually, you need to get a shell in the container using the following command:
 
