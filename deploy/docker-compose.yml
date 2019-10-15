@@ -52,7 +52,7 @@ services:
       - VIRTUAL_HOST=$ZIMBRA_HOSTNAME
       - LETSENCRYPT_HOST=$ZIMBRA_HOSTNAME
       - LETSENCRYPT_EMAIL=$ZIMBRA_ADMIN_EMAIL
-      - LETSENCRYPT_TEST=true
+#      - LETSENCRYPT_TEST=true
       - TLS_CRT_FILE_PATH=/app/tls/$ZIMBRA_HOSTNAME.crt
       - TLS_KEY_FILE_PATH=/app/tls/$ZIMBRA_HOSTNAME.key
     volumes:
@@ -65,9 +65,7 @@ services:
     security_opt:
       - apparmor=unconfined
     restart: unless-stopped
-#    stdin_open: true
-#    tty: true
-    command: run-and-enter
+    command: run
 
 networks:
   frontend:
