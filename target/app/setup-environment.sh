@@ -24,6 +24,7 @@ apt-get -y install \
     coreutils \
     cron \
     iptables \
+    iproute2 \
     logrotate \
     lsb-release \
     nano \
