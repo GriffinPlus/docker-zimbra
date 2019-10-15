@@ -1,0 +1,89 @@
+version: '2'
+services:
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy:latest
+    container_name: nginx-proxy
+    labels:
+      com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
+    network_mode: host
+    volumes:
+      - nginx_proxy_certs:/etc/nginx/certs:ro
+      - nginx_proxy_conf:/etc/nginx/conf.d
+      - nginx_proxy_vhostd:/etc/nginx/vhost.d
+      - nginx_proxy_html:/usr/share/nginx/html
+      - nginx_proxy_dhparam:/etc/nginx/dhparam
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    restart: unless-stopped
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion:v1.12-rc.1
+    container_name: nginx-proxy-le
+    networks:
+      frontend:
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+    volumes:
+      - nginx_proxy_certs:/etc/nginx/certs
+      - nginx_proxy_conf:/etc/nginx/conf.d
+      - nginx_proxy_vhostd:/etc/nginx/vhost.d
+      - nginx_proxy_html:/usr/share/nginx/html
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+  zimbra:
+    image: griffinplus/zimbra:latest
+    container_name: zimbra
+    hostname: $ZIMBRA_HOSTNAME
+    ports:
+      - "$HOST_IPV4:25:25"
+      - "$HOST_IPV4:110:110"
+      - "$HOST_IPV4:143:143"
+      - "$HOST_IPV4:465:465"
+      - "$HOST_IPV4:587:587"
+      - "$HOST_IPV4:993:993"
+      - "$HOST_IPV4:995:995"
+      - "$HOST_IPV4:5222:5222"
+      - "$HOST_IPV4:5223:5223"
+      - "$HOST_IPV4:7071:7071"
+    networks:
+      frontend:
+    environment:
+      - VIRTUAL_HOST=$ZIMBRA_HOSTNAME
+      - LETSENCRYPT_HOST=$ZIMBRA_HOSTNAME
+      - LETSENCRYPT_EMAIL=$ZIMBRA_ADMIN_EMAIL
+#      - LETSENCRYPT_TEST=true
+      - TLS_CRT_FILE_PATH=/app/tls/$ZIMBRA_HOSTNAME.crt
+      - TLS_KEY_FILE_PATH=/app/tls/$ZIMBRA_HOSTNAME.key
+    volumes:
+      - nginx_proxy_certs:/app/tls:ro
+      - zimbra_data:/data
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - SYS_PTRACE
+    security_opt:
+      - apparmor=unconfined
+    restart: unless-stopped
+    command: run
+
+networks:
+  frontend:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "true"
+    ipam:
+      driver: default
+      config:
+      - subnet: $FRONTEND_IPV4_SUBNET
+        gateway: $FRONTEND_IPV4_GATEWAY
+      - subnet: $FRONTEND_IPV6_SUBNET
+        gateway: $FRONTEND_IPV6_GATEWAY
+
+volumes:
+  nginx_proxy_conf:
+  nginx_proxy_vhostd:
+  nginx_proxy_html:
+  nginx_proxy_dhparam:
+  nginx_proxy_certs:
+  zimbra_data:
