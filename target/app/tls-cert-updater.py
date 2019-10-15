@@ -28,8 +28,8 @@ from cryptography.x509.oid import NameOID, ExtensionOID, AuthorityInformationAcc
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 TLS_DIR_PATH = SCRIPT_DIR + "/tls"
-TLS_KEY_FILE_PATH = TLS_DIR_PATH + "/zimbra.key"
-TLS_CRT_FILE_PATH = TLS_DIR_PATH + "/zimbra.crt"
+TLS_KEY_FILE_PATH_DEFAULT = TLS_DIR_PATH + "/zimbra.key"
+TLS_CRT_FILE_PATH_DEFAULT = TLS_DIR_PATH + "/zimbra.crt"
 ZIMBRA_USER = "zimbra"
 ZIMBRA_PRIVATE_KEY_PATH = "/opt/zimbra/ssl/zimbra/commercial/commercial.key"
 
@@ -367,6 +367,9 @@ signal.signal(signal.SIGINT, signal_handler)
 # worker
 # ---------------------------------------------------------------------------------------------------------------------
 
+tls_crt_file_path = os.getenv('TLS_CRT_FILE_PATH', TLS_CRT_FILE_PATH_DEFAULT)
+tls_key_file_path = os.getenv('TLS_KEY_FILE_PATH', TLS_KEY_FILE_PATH_DEFAULT)
+
 interrupted = False
 last_certificates = None
 while not interrupted:
@@ -374,15 +377,16 @@ while not interrupted:
     try:
 
         # load certificates
-        certificates = load_certificate_file(TLS_CRT_FILE_PATH)
+        certificates = load_certificate_file(tls_crt_file_path)
 
         if certificates != last_certificates:
 
             log_note("Certificate file has changed. Starting update...")
 
+
             # load private key
-            log_note("Loading private key ({0})...".format(TLS_KEY_FILE_PATH))
-            server_private_key = load_private_key_file(TLS_KEY_FILE_PATH)
+            log_note("Loading private key ({0})...".format(tls_key_file_path))
+            server_private_key = load_private_key_file(tls_key_file_path)
 
             # append missing CA certificates, if necessary
             log_note("Checking certificate chain, fixing if necessary...")
