@@ -1,8 +1,7 @@
 # Deploying Zimbra with Letsencrypt 
 
 This example shows how to deploy the Zimbra container along with Jason Wilder's [nginx-proxy](https://github.com/jwilder/nginx-proxy)
-and the [letsencrypt-nginx-proxy-companion](https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion) to run Zimbra with
-free X.509 certificates issued by the Letsencrypt certificate authority.
+and Yves Blusseau's [letsencrypt-nginx-proxy-companion](https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion) to run Zimbra with free X.509 certificates issued by the Letsencrypt certificate authority.
 
 ## Howto
 
