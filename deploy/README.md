@@ -16,7 +16,7 @@ The script contains comments to assist with configuring the script properly.
 After adjusting the site-specific settings, you can install Zimbra:
 
 ```
-./docker-compose-wrapper.sh run zimbra
+./docker-compose-wrapper.sh run --rm zimbra
 ```
 
 The installation script will then download the required files, start Zimbra's menu-driven installation script and ask for
@@ -367,8 +367,8 @@ Store configuration
   18) Spell server URL:                        http://zimbra.my-domain.com:7780/aspell.php
   19) Enable version update checks:            TRUE
   20) Enable version update notifications:     TRUE
-  21) Version update notification email:       admin@zimbra.my-domain.com
-  22) Version update source email:             admin@zimbra.my-domain.com
+  21) Version update notification email:       admin@my-domain.com
+  22) Version update source email:             admin@my-domain.com
   23) Install mailstore (service webapp):      yes
   24) Install UI (zimbra,zimbraAdmin webapps): yes
 
@@ -432,7 +432,7 @@ Select, or 'r' for previous menu [r]
 The Zimbra container is about to run behind a reverse-proxy in front of *zimbra-store*, respectively the web service part
 of it. You should disable Zimbra's own NGINX HTTP[S] proxy in this menu, because running two reverse proxys in a line
 causes redirection loops. The nginx-proxy will directly proxy requests to the *Jetty* web service. Furthermore you should
-disable *strict server name enforcement* to allow the web service to be accessed without restricting the server name to
+set `strict server name enforcement` to `no` to allow the web service to be accessed without restricting the server name to
 configured virtual domains.
 
 This step should be done **before** configuring the *zimbra-store* as disabling the proxy influences the web service settings.
@@ -481,8 +481,8 @@ Store configuration
   18) Spell server URL:                        http://zimbra.my-company.com:7780/aspell.php
   19) Enable version update checks:            TRUE
   20) Enable version update notifications:     TRUE
-  21) Version update notification email:       admin@zimbra2.griffin.plus
-  22) Version update source email:             admin@zimbra2.griffin.plus
+  21) Version update notification email:       admin@my-company.com
+  22) Version update source email:             admin@my-company.com
   23) Install mailstore (service webapp):      yes
   24) Install UI (zimbra,zimbraAdmin webapps): yes
 ```
@@ -612,11 +612,10 @@ Install brute-force detector auditswatch
 Generate a 4096 bit prime to use as DH parameters
 
 ```
-
 Retrieving some information needed for further steps...
-- Admin e-mail address: admin@zimbra2.griffin.plus
+- Admin e-mail address: admin@my-company.com
 
-Configuring Zimbra's brute-force detector (auditswatch) to send notifications to admin@zimbra2.griffin.plus...
+Configuring Zimbra's brute-force detector (auditswatch) to send notifications to admin@my-company.com...
 --2019-10-15 18:08:30--  http://bugzilla-attach.zimbra.com/attachment.cgi?id=66723
 Resolving bugzilla-attach.zimbra.com (bugzilla-attach.zimbra.com)... 3.208.5.102, 3.211.235.155
 Connecting to bugzilla-attach.zimbra.com (bugzilla-attach.zimbra.com)|3.208.5.102|:80... connected.
@@ -772,7 +771,7 @@ update-alternatives: using /usr/bin/bsd-mailx to provide /usr/bin/mailx (mailx) 
 Processing triggers for libc-bin (2.27-3ubuntu1) ...
 
 Restarting services...
-Host zimbra2.griffin.plus
+Host zimbra.my-company.com
         Stopping zmconfigd...Done.
         Stopping zimlet webapp...Done.
         Stopping zimbraAdmin webapp...Done.
@@ -797,7 +796,7 @@ Host zimbra2.griffin.plus
  * Starting enhanced syslogd rsyslogd                                                                                                                                                                                                 [ OK ]
  * Starting periodic command scheduler cron                                                                                                                                                                                           [ OK ]
  * Starting OpenBSD Secure Shell server sshd                                                                                                                                                                                          [ OK ]
-Host zimbra2.griffin.plus
+Host zimbra.my-company.com
         Starting ldap...Done.
         Starting zmconfigd...Done.
         Starting logger...Done.
@@ -818,7 +817,7 @@ Host zimbra2.griffin.plus
         Starting zimlet webapp...Done.
 Starting auditswatch...done.
 Stopping auditswatch...done.
-Host zimbra2.griffin.plus
+Host zimbra.my-company.com
         Stopping zmconfigd...Done.
         Stopping zimlet webapp...Done.
         Stopping zimbraAdmin webapp...Done.
