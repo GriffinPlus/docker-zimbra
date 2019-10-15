@@ -406,7 +406,8 @@ Running the Zimbra container with the nginx-proxy requires some more adjustments
 
 The entire Zimbra system is installed within the container. There are no external Zimbra components, so there is no
 need to use encrypted communication between Zimbra components. It is safe to set `Secure interprocess communications`
-to `no`. Furthermore you should set the timezone according to your location.
+to `no`. Furthermore you should set `Timezone` according to your location and `IP Mode` to `both` if you intend to
+make Zimbra accessable via IPv4 and IPv6.
 
 ```
 Common configuration
@@ -418,7 +419,7 @@ Common configuration
    5) Store ephemeral attributes outside Ldap: no
    6) Secure interprocess communications:      no
    7) TimeZone:                                Europe/Berlin
-   8) IP Mode:                                 ipv4
+   8) IP Mode:                                 both
    9) Default SSL digest:                      sha256
 
 Select, or 'r' for previous menu [r]
