@@ -272,7 +272,6 @@ function wait_for_signals
 
 setup_signals "$1" "handle_signal" SIGINT SIGTERM SIGHUP
 
-
 # configure split-horizon DNS for Zimbra
 if [ "$$" = "1" ]; then
 
@@ -299,7 +298,10 @@ if [ "$$" = "1" ]; then
 
     # configure dnsmasq
     [[ -z "${MAIL_DOMAINS}" ]] && MAIL_DOMAINS=`echo "$EXTERNAL_HOST_FQDN" | cut -d '.' -f 2-`
-    echo "server=$DNS_SERVER" > /etc/dnsmasq.conf
+    echo > /etc/dnsmasq.conf
+    for dnsserver in $DNS_SERVER; do
+        echo "server=$dnsserver" >> /etc/dnsmasq.conf
+    done
     echo "listen-address=127.0.0.1" >> /etc/dnsmasq.conf
     if [ -z "${EXTERNAL_HOST_FQDN}" ]; then
         echo "domain=$DOMAIN" >> /etc/dnsmasq.conf
@@ -318,6 +320,8 @@ if [ "$$" = "1" ]; then
             echo "mx-host=$domain,$EXT_HOSTNAME.$EXT_DOMAIN,0" >> /etc/dnsmasq.conf
         done
     fi
+    cat /etc/dnsmasq.conf
+
     /etc/init.d/dnsmasq start
 
     # modify /etc/resolv.conf to use dnsmasq
