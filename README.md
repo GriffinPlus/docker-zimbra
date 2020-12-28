@@ -8,7 +8,7 @@
 
 ## Overview
 
-This image contains everything needed to download, setup and run the [Zimbra](https://www.zimbra.com/) colaboration suite. The image itself does not contain Zimbra. On the first start, the container installs a minimalistic Ubuntu 18.04 LTS onto a docker volume. This installation serves as the root filesystem for Zimbra, so Zimbra can work with the environment and everything is kept consistent and persistent - even if the container is updated. This also implys that pulling a new image version **does not** automatically update the Ubuntu installation on the docker volume. To reduce the chance of security issues, the container configures Ubuntu's *unattended upgrades* package to install official updates automatically. 
+This image contains everything needed to download, setup and run the [Zimbra](https://www.zimbra.com/) collaboration suite. The image itself does not contain Zimbra. On the first start, the container installs a minimalistic Ubuntu 18.04 LTS onto a docker volume. This installation serves as the root filesystem for Zimbra, so Zimbra can work with the environment and everything is kept consistent and persistent - even if the container is updated. This also implies that pulling a new image version **does not** automatically update the Ubuntu installation on the docker volume. To reduce the chance of security issues, the container configures Ubuntu's *unattended upgrades* package to install official updates automatically. 
 
 The container supports IPv6 with a global IPv6 address and configures packet filtering to block common attacks and access to non-public ports.
 
